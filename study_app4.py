@@ -175,7 +175,7 @@ if 'use_all_files' not in st.session_state:
 if 'loaded_files_info' not in st.session_state:
     st.session_state.loaded_files_info = []
 if 'watermark_image' not in st.session_state:
-    st.session_state.watermark_image = "watermark.png"
+    st.session_state.watermark_image = "the_coltap_logo.jpg"
 if 'generation_count' not in st.session_state:
     st.session_state.generation_count = {}
 if 'previous_generations' not in st.session_state:
