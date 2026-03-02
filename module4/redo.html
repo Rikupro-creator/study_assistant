@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Redo Logs & Archive Logs - Complete Visual Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #c76e1e 0%, #9c5518 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        .header p {
+            margin: 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        .diagram-container {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .diagram-title {
+            font-size: 1.8em;
+            color: #c76e1e;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .diagram-subtitle {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .notes {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .notes-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #856404;
+        }
+        .key-concepts {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .key-concepts-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #0c5460;
+        }
+        .warning-box {
+            background: #ffebee;
+            border-left: 4px solid #c62828;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .warning-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #c62828;
+        }
+        .success-box {
+            background: #e8f5e9;
+            border-left: 4px solid #2e7d32;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .code-block {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .code-keyword {
+            color: #80cbc4;
+            font-weight: bold;
+        }
+        .code-comment {
+            color: #78909c;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        .concept-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 6px solid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .comparison-table th {
+            background: #c76e1e;
+            color: white;
+        }
+        .comparison-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-production {
+            background: #2e7d32;
+            color: white;
+        }
+        .badge-test {
+            background: #f57c00;
+            color: white;
+        }
+        .badge-critical {
+            background: #c62828;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔄 Oracle Redo Logs & Archive Logs</h1>
+        <p>Complete Visual Guide to Redo Management, ARCHIVELOG Mode, and Best Practices</p>
+    </div>
+
+    <!-- SECTION 1: QUICK REFERENCE - PURPOSE & ARCHITECTURE -->
+    <div class="diagram-container" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+        <div class="diagram-title" style="color: #9c5518;">📚 Quick Reference: Redo Log Essentials</div>
+        <div class="diagram-subtitle">Purpose, Architecture & Critical Concepts</div>
+        
+        <div class="grid-2" style="margin-top: 20px;">
+            <!-- Purpose Card -->
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 6px solid #c76e1e;">
+                <h3 style="color: #c76e1e; margin-top: 0;">🎯 PURPOSE OF REDO LOGS</h3>
+                <p style="font-size: 1.1em;"><strong>Redo logs record ALL changes made to the database.</strong></p>
+                <ul>
+                    <li><strong>Redo entries</strong> are generated whenever data changes</li>
+                    <li>First stored in <strong>memory</strong> (Redo Log Buffer)</li>
+                    <li>Later written to <strong>disk</strong> (Online Redo Log Files)</li>
+                </ul>
+                <div style="background: #ffebee; padding: 12px; border-radius: 5px; margin-top: 10px;">
+                    <span style="color: #c62828; font-weight: bold;">⚠️ CRITICAL:</span> 
+                    If online redo logs are missing or deleted → <strong>database will crash</strong>
+                </div>
+            </div>
+            
+            <!-- Architecture Flow -->
+            <div style="background: white; padding: 20px; border-radius: 8px; border-left: 6px solid #1565c0;">
+                <h3 style="color: #1565c0; margin-top: 0;">🔄 REDO LOG ARCHITECTURE</h3>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="background: #bbdefb; padding: 8px 12px; border-radius: 20px; font-weight: bold;">1. User DML</span>
+                        <span style="margin: 0 10px; color: #666;">→</span>
+                        <span style="background: #e3f2fd; padding: 8px 12px; border-radius: 20px;">Redo entry generated</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="background: #bbdefb; padding: 8px 12px; border-radius: 20px; font-weight: bold;">2. Redo Log Buffer</span>
+                        <span style="margin: 0 10px; color: #666;">←</span>
+                        <span style="background: #e3f2fd; padding: 8px 12px; border-radius: 20px;">Stored in memory (SGA)</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="background: #bbdefb; padding: 8px 12px; border-radius: 20px; font-weight: bold; color: #c62828;">3. LGWR</span>
+                        <span style="margin: 0 10px; color: #666;">→</span>
+                        <span style="background: #e3f2fd; padding: 8px 12px; border-radius: 20px;">Writes to Online Redo Logs</span>
+                    </div>
+                </div>
+                <p style="margin-top: 15px; font-style: italic; color: #666;">Redo logs are written <strong>sequentially</strong>, not randomly</p>
+            </div>
+        </div>
+
+        <!-- Golden Rule -->
+        <div style="background: linear-gradient(135deg, #c76e1e 0%, #9c5518 100%); color: white; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: center;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1.3em;">🎯 The Golden Rule of Redo</h3>
+            <p style="margin: 0; font-size: 1.1em; line-height: 1.6;">
+                <strong>Redo = Forward recovery</strong> (replays changes)<br>
+                <strong>Undo = Backward recovery</strong> (reverses changes)
+            </p>
+        </div>
+    </div>
+
+    <!-- SECTION 2: REDO LOG GROUPS & CIRCULAR WRITING -->
+    <div class="diagram-container">
+        <div class="diagram-title">🔄 Redo Log Groups & Circular Writing</div>
+        <div class="diagram-subtitle">Understanding the sequential, circular nature of redo logs</div>
+        
+        <svg viewBox="0 0 1100 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Group 1 - CURRENT -->
+            <g id="group1">
+                <rect x="100" y="80" width="220" height="140" fill="#c8e6c9" stroke="#2e7d32" stroke-width="4" rx="10"/>
+                <text x="210" y="120" text-anchor="middle" font-size="20" font-weight="bold" fill="#2e7d32">GROUP 1</text>
+                <text x="210" y="150" text-anchor="middle" font-size="14">Member 1: /disk1/redo01.log</text>
+                <text x="210" y="175" text-anchor="middle" font-size="14">Member 2: /disk2/redo01.log</text>
+                <rect x="180" y="190" width="60" height="25" fill="#2e7d32" rx="5"/>
+                <text x="210" y="208" text-anchor="middle" font-size="12" fill="white" font-weight="bold">CURRENT ⚡</text>
+            </g>
+            
+            <!-- Arrow to Group 2 -->
+            <path d="M 320 150 L 380 150" stroke="#c76e1e" stroke-width="4" marker-end="url(#arrow-redo)"/>
+            <text x="350" y="130" text-anchor="middle" font-size="14" fill="#c76e1e" font-weight="bold">LOG SWITCH</text>
+            <text x="350" y="180" text-anchor="middle" font-size="12" fill="#c76e1e">LGWR moves to next</text>
+            
+            <!-- Group 2 - ACTIVE -->
+            <g id="group2">
+                <rect x="380" y="80" width="220" height="140" fill="#ffe0b2" stroke="#f57c00" stroke-width="4" rx="10"/>
+                <text x="490" y="120" text-anchor="middle" font-size="20" font-weight="bold" fill="#f57c00">GROUP 2</text>
+                <text x="490" y="150" text-anchor="middle" font-size="14">Member 1: /disk1/redo02.log</text>
+                <text x="490" y="175" text-anchor="middle" font-size="14">Member 2: /disk2/redo02.log</text>
+                <rect x="460" y="190" width="60" height="25" fill="#f57c00" rx="5"/>
+                <text x="490" y="208" text-anchor="middle" font-size="12" fill="white" font-weight="bold">ACTIVE</text>
+            </g>
+            
+            <!-- Arrow to Group 3 -->
+            <path d="M 600 150 L 660 150" stroke="#c76e1e" stroke-width="4" marker-end="url(#arrow-redo)"/>
+            
+            <!-- Group 3 - INACTIVE -->
+            <g id="group3">
+                <rect x="660" y="80" width="220" height="140" fill="#e0e0e0" stroke="#616161" stroke-width="4" rx="10"/>
+                <text x="770" y="120" text-anchor="middle" font-size="20" font-weight="bold" fill="#616161">GROUP 3</text>
+                <text x="770" y="150" text-anchor="middle" font-size="14">Member 1: /disk1/redo03.log</text>
+                <text x="770" y="175" text-anchor="middle" font-size="14">Member 2: /disk2/redo03.log</text>
+                <rect x="740" y="190" width="60" height="25" fill="#616161" rx="5"/>
+                <text x="770" y="208" text-anchor="middle" font-size="12" fill="white" font-weight="bold">INACTIVE</text>
+            </g>
+            
+            <!-- Circular arrow back to Group 1 -->
+            <path d="M 880 150 L 940 150 L 940 300 L 50 300 L 50 150 L 100 150" stroke="#2e7d32" stroke-width="4" stroke-dasharray="10,10" fill="none" marker-end="url(#arrow-redo)"/>
+            <text x="500" y="280" text-anchor="middle" font-size="16" font-weight="bold" fill="#2e7d32">CIRCULAR WRITING: GROUP 1 → GROUP 2 → GROUP 3 → BACK TO GROUP 1</text>
+            
+            <!-- Key Statistics -->
+            <rect x="100" y="300" width="780" height="100" fill="#f5f5f5" stroke="#9e9e9e" stroke-width="2" rx="5"/>
+            <text x="490" y="335" text-anchor="middle" font-size="16" font-weight="bold">📊 Redo Log Configuration Rules</text>
+            <text x="180" y="370" font-size="12">Minimum groups: <strong>2</strong></text>
+            <text x="400" y="370" font-size="12">Production best practice: <strong>3+ groups</strong></text>
+            <text x="680" y="370" font-size="12">File sizes: <strong>Fixed, do not auto-grow</strong></text>
+            
+            <defs>
+                <marker id="arrow-redo" markerWidth="12" markerHeight="12" refX="11" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L11,3 z" fill="#c76e1e"/>
+                </marker>
+            </defs>
+        </svg>
+        
+        <div class="key-concepts">
+            <div class="key-concepts-title">🎯 Key Concepts - Redo Log Groups:</div>
+            <ul>
+                <li><strong>Redo log groups:</strong> Each group contains one or more identical members (multiplexing)</li>
+                <li><strong>Minimum groups required:</strong> 2 (database cannot run with less)</li>
+                <li><strong>Production best practice:</strong> 3 or more groups</li>
+                <li><strong>Circular reuse:</strong> LGWR writes sequentially, then wraps around - this is NORMAL behavior</li>
+                <li><strong>LOG SWITCH:</strong> When current group fills, LGWR moves to next group</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECTION 3: REDO LOG MULTIPLEXING -->
+    <div class="diagram-container">
+        <div class="diagram-title">🛡️ Redo Log Multiplexing</div>
+        <div class="diagram-subtitle">Protecting against disk failure with multiple members per group</div>
+        
+        <svg viewBox="0 0 1100 500" xmlns="http://www.w3.org/2000/svg">
+            <!-- Group 1 with 2 members on different disks -->
+            <g id="multiplex-group1">
+                <rect x="50" y="50" width="300" height="180" fill="#fff3e0" stroke="#f57c00" stroke-width="3" rx="10"/>
+                <text x="200" y="85" text-anchor="middle" font-size="18" font-weight="bold" fill="#f57c00">GROUP 1</text>
+                
+                <!-- Disk 1 Member -->
+                <rect x="70" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="130" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 1</text>
+                <text x="130" y="145" text-anchor="middle" font-size="11">/u01/oradata/redo01.log</text>
+                
+                <!-- Disk 2 Member -->
+                <rect x="210" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="270" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 2</text>
+                <text x="270" y="145" text-anchor="middle" font-size="11">/u02/oradata/redo01.log</text>
+                
+                <text x="200" y="185" text-anchor="middle" font-size="11" fill="#2e7d32">✅ Identical copies - if Disk 1 fails, Disk 2 continues</text>
+            </g>
+            
+            <!-- Group 2 with 2 members -->
+            <g id="multiplex-group2">
+                <rect x="400" y="50" width="300" height="180" fill="#fff3e0" stroke="#f57c00" stroke-width="3" rx="10"/>
+                <text x="550" y="85" text-anchor="middle" font-size="18" font-weight="bold" fill="#f57c00">GROUP 2</text>
+                
+                <rect x="420" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="480" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 1</text>
+                <text x="480" y="145" text-anchor="middle" font-size="11">/u01/oradata/redo02.log</text>
+                
+                <rect x="560" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="620" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 2</text>
+                <text x="620" y="145" text-anchor="middle" font-size="11">/u02/oradata/redo02.log</text>
+            </g>
+            
+            <!-- Group 3 with 2 members -->
+            <g id="multiplex-group3">
+                <rect x="750" y="50" width="300" height="180" fill="#fff3e0" stroke="#f57c00" stroke-width="3" rx="10"/>
+                <text x="900" y="85" text-anchor="middle" font-size="18" font-weight="bold" fill="#f57c00">GROUP 3</text>
+                
+                <rect x="770" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="830" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 1</text>
+                <text x="830" y="145" text-anchor="middle" font-size="11">/u01/oradata/redo03.log</text>
+                
+                <rect x="910" y="100" width="120" height="60" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                <text x="970" y="125" text-anchor="middle" font-size="12" font-weight="bold">DISK 2</text>
+                <text x="970" y="145" text-anchor="middle" font-size="11">/u02/oradata/redo03.log</text>
+            </g>
+            
+            <!-- Failure scenario -->
+            <rect x="50" y="270" width="1000" height="180" fill="#ffebee" stroke="#c62828" stroke-width="3" rx="10"/>
+            <text x="550" y="305" text-anchor="middle" font-size="18" font-weight="bold" fill="#c62828">⚠️ DISK 1 FAILURE SCENARIO</text>
+            
+            <!-- Disk 1 failed - X marks -->
+            <rect x="70" y="330" width="120" height="60" fill="#ffcdd2" stroke="#c62828" stroke-width="3" rx="5"/>
+            <text x="130" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">DISK 1 - FAILED</text>
+            <text x="130" y="375" text-anchor="middle" font-size="11" fill="#c62828">❌ /u01/redo01.log</text>
+            <line x1="70" y1="330" x2="190" y2="390" stroke="#c62828" stroke-width="3"/>
+            <line x1="190" y1="330" x2="70" y2="390" stroke="#c62828" stroke-width="3"/>
+            
+            <rect x="420" y="330" width="120" height="60" fill="#ffcdd2" stroke="#c62828" stroke-width="3" rx="5"/>
+            <text x="480" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">DISK 1 - FAILED</text>
+            <text x="480" y="375" text-anchor="middle" font-size="11" fill="#c62828">❌ /u01/redo02.log</text>
+            <line x1="420" y1="330" x2="540" y2="390" stroke="#c62828" stroke-width="3"/>
+            <line x1="540" y1="330" x2="420" y2="390" stroke="#c62828" stroke-width="3"/>
+            
+            <rect x="770" y="330" width="120" height="60" fill="#ffcdd2" stroke="#c62828" stroke-width="3" rx="5"/>
+            <text x="830" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#c62828">DISK 1 - FAILED</text>
+            <text x="830" y="375" text-anchor="middle" font-size="11" fill="#c62828">❌ /u01/redo03.log</text>
+            <line x1="770" y1="330" x2="890" y2="390" stroke="#c62828" stroke-width="3"/>
+            <line x1="890" y1="330" x2="770" y2="390" stroke="#c62828" stroke-width="3"/>
+            
+            <!-- Disk 2 still working -->
+            <rect x="210" y="330" width="120" height="60" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+            <text x="270" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">DISK 2 - ONLINE</text>
+            <text x="270" y="375" text-anchor="middle" font-size="11">✅ /u02/redo01.log</text>
+            
+            <rect x="560" y="330" width="120" height="60" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+            <text x="620" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">DISK 2 - ONLINE</text>
+            <text x="620" y="375" text-anchor="middle" font-size="11">✅ /u02/redo02.log</text>
+            
+            <rect x="910" y="330" width="120" height="60" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+            <text x="970" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">DISK 2 - ONLINE</text>
+            <text x="970" y="375" text-anchor="middle" font-size="11">✅ /u02/redo03.log</text>
+            
+            <text x="550" y="435" text-anchor="middle" font-size="14" font-weight="bold" fill="#2e7d32">✅ DATABASE CONTINUES RUNNING - MULTIPLEXING PROTECTS AGAINST SINGLE DISK FAILURE</text>
+        </svg>
+        
+        <div class="notes">
+            <div class="notes-title">💡 Redo Multiplexing Best Practices:</div>
+            <ul>
+                <li><strong>Each group should have at least 2 members</strong> on separate physical disks</li>
+                <li><strong>Place members on different storage controllers</strong> when possible</li>
+                <li><strong>Oracle does NOT know disk topology</strong> - DBA must decide member placement</li>
+                <li><strong>Even with storage RAID/ASM, most production systems still multiplex redo logs</strong> (conservative best practice)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECTION 4: NOARCHIVELOG vs ARCHIVELOG MODE -->
+    <div class="diagram-container">
+        <div class="diagram-title">📀 NOARCHIVELOG vs ARCHIVELOG Mode</div>
+        <div class="diagram-subtitle">The single most important decision for database recoverability</div>
+        
+        <div class="grid-2" style="gap: 30px;">
+            <!-- NOARCHIVELOG -->
+            <div style="background: #ffebee; padding: 25px; border-radius: 10px; border: 3px solid #c62828;">
+                <h3 style="color: #c62828; margin-top: 0; text-align: center; font-size: 1.8em;">❌ NOARCHIVELOG</h3>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                        <span class="badge" style="background: #c62828; color: white; font-size: 1em;">TEST/DEV ONLY</span>
+                    </div>
+                    
+                    <svg width="100%" height="120" viewBox="0 0 400 120">
+                        <!-- Circular reuse with overwrite -->
+                        <rect x="50" y="30" width="80" height="60" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                        <text x="90" y="55" text-anchor="middle" font-size="12" font-weight="bold">GROUP 1</text>
+                        <text x="90" y="75" text-anchor="middle" font-size="10">CURRENT</text>
+                        
+                        <rect x="150" y="30" width="80" height="60" fill="#ffe0b2" stroke="#f57c00" stroke-width="2" rx="5"/>
+                        <text x="190" y="55" text-anchor="middle" font-size="12" font-weight="bold">GROUP 2</text>
+                        <text x="190" y="75" text-anchor="middle" font-size="10">ACTIVE</text>
+                        
+                        <rect x="250" y="30" width="80" height="60" fill="#e0e0e0" stroke="#616161" stroke-width="2" rx="5"/>
+                        <text x="290" y="55" text-anchor="middle" font-size="12" font-weight="bold">GROUP 3</text>
+                        <text x="290" y="75" text-anchor="middle" font-size="10">INACTIVE</text>
+                        
+                        <!-- Overwrite arrow -->
+                        <path d="M 290 90 L 290 110 L 90 110 L 90 90" stroke="#c62828" stroke-width="3" fill="none" marker-end="url(#arrow-overwrite)"/>
+                        <text x="190" y="100" text-anchor="middle" font-size="11" fill="#c62828" font-weight="bold">OVERWRITTEN!</text>
+                        
+                        <defs>
+                            <marker id="arrow-overwrite" markerWidth="12" markerHeight="12" refX="11" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L11,3 z" fill="#c62828"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                    
+                    <h4 style="color: #c62828; margin-bottom: 10px;">Characteristics:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">❌ <strong>No point-in-time recovery</strong></li>
+                        <li style="margin: 12px 0;">❌ <strong>Cannot recover to past state</strong></li>
+                        <li style="margin: 12px 0;">❌ <strong>Cannot use Data Guard or advanced HA</strong></li>
+                        <li style="margin: 12px 0;">✅ <strong>Only instance recovery</strong></li>
+                        <li style="margin: 12px 0;">✅ <strong>No media recovery capability</strong></li>
+                    </ul>
+                    <div style="background: #263238; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                        <span style="color: #ffcdd2; font-weight: bold;">⚠️ What happens:</span>
+                        <span style="color: white; display: block; margin-top: 5px;">Old redo entries are OVERWRITTEN during reuse</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ARCHIVELOG -->
+            <div style="background: #e8f5e9; padding: 25px; border-radius: 10px; border: 3px solid #2e7d32;">
+                <h3 style="color: #2e7d32; margin-top: 0; text-align: center; font-size: 1.8em;">✅ ARCHIVELOG</h3>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+                        <span class="badge" style="background: #2e7d32; color: white; font-size: 1em;">PRODUCTION STANDARD</span>
+                    </div>
+                    
+                    <svg width="100%" height="150" viewBox="0 0 400 150">
+                        <!-- Online redo logs -->
+                        <rect x="30" y="20" width="80" height="60" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+                        <text x="70" y="45" text-anchor="middle" font-size="12" font-weight="bold">GROUP 1</text>
+                        <text x="70" y="65" text-anchor="middle" font-size="10">CURRENT</text>
+                        
+                        <rect x="130" y="20" width="80" height="60" fill="#ffe0b2" stroke="#f57c00" stroke-width="2" rx="5"/>
+                        <text x="170" y="45" text-anchor="middle" font-size="12" font-weight="bold">GROUP 2</text>
+                        <text x="170" y="65" text-anchor="middle" font-size="10">ACTIVE</text>
+                        
+                        <rect x="230" y="20" width="80" height="60" fill="#e0e0e0" stroke="#616161" stroke-width="2" rx="5"/>
+                        <text x="270" y="45" text-anchor="middle" font-size="12" font-weight="bold">GROUP 3</text>
+                        <text x="270" y="65" text-anchor="middle" font-size="10">BEING ARCHIVED</text>
+                        
+                        <!-- ARCn process -->
+                        <rect x="270" y="100" width="60" height="30" fill="#1565c0" rx="5"/>
+                        <text x="300" y="120" text-anchor="middle" font-size="12" fill="white" font-weight="bold">ARCn</text>
+                        
+                        <!-- Arrow to archive -->
+                        <path d="M 270 80 L 300 100" stroke="#1565c0" stroke-width="3" marker-end="url(#arrow-archive)"/>
+                        
+                        <!-- Archived redo log -->
+                        <rect x="320" y="100" width="60" height="30" fill="#9c27b0" rx="5"/>
+                        <text x="350" y="120" text-anchor="middle" font-size="11" fill="white">ARCHIVE</text>
+                        
+                        <defs>
+                            <marker id="arrow-archive" markerWidth="12" markerHeight="12" refX="11" refY="3" orient="auto">
+                                <path d="M0,0 L0,6 L11,3 z" fill="#1565c0"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                    
+                    <h4 style="color: #2e7d32; margin-bottom: 10px;">Characteristics:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">✅ <strong>Point-in-time recovery</strong></li>
+                        <li style="margin: 12px 0;">✅ <strong>Can recover to past state</strong></li>
+                        <li style="margin: 12px 0;">✅ <strong>Data Guard & HA features</strong></li>
+                        <li style="margin: 12px 0;">✅ <strong>Online backups possible</strong></li>
+                        <li style="margin: 12px 0;">⚠️ <strong>Must manage archive space</strong></li>
+                    </ul>
+                    <div style="background: #263238; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                        <span style="color: #aed581; font-weight: bold;">📦 What happens:</span>
+                        <span style="color: white; display: block; margin-top: 5px;">ARCn copies full redo logs BEFORE reuse → Archived Redo Logs</span>
+                        <span style="color: #ffb74d; display: block; margin-top: 8px; font-size: 0.9em;">⚠️ CRITICAL: Oracle does NOT manage archive space - DBA must delete old archive logs!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Comparison Table -->
+        <div style="margin-top: 30px; overflow-x: auto;">
+            <h3 style="color: #0c5460;">📊 NOARCHIVELOG vs ARCHIVELOG - Complete Comparison</h3>
+            <table class="comparison-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>NOARCHIVELOG</th>
+                        <th>ARCHIVELOG</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Protection</td><td>Against instance crash only</td><td>Against instance crash & media failure</td></tr>
+                    <tr><td>Media failure recovery</td><td>❌ Not supported</td><td>✅ Supported with backups</td></tr>
+                    <tr><td>Online backups</td><td>❌ Not possible</td><td>✅ Possible</td></tr>
+                    <tr><td>Management complexity</td><td>Minimal</td><td>Must manage archived redo logs</td></tr>
+                    <tr><td>Storage requirement</td><td>Minimal</td><td>Must plan and provide storage</td></tr>
+                    <tr><td>Performance overhead</td><td>None</td><td>Slight (ARCn process)</td></tr>
+                    <tr><td>Typical use</td><td><span style="color: #f57c00; font-weight: bold;">POC/Testing</span></td><td><span style="color: #2e7d32; font-weight: bold;">✅ PRODUCTION</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="warning-box" style="margin-top: 20px;">
+            <div class="warning-title">⚠️ CRITICAL: Archive Destination Failure</div>
+            <p style="margin: 10px 0;">If all archive destinations are disabled while in ARCHIVELOG mode:</p>
+            <div style="background: #263238; padding: 15px; border-radius: 5px;">
+                <span style="color: #ffcdd2; font-weight: bold;">🚫 DATABASE WILL HANG</span>
+                <span style="color: white; display: block; margin-top: 5px;">During log switches until a valid destination is set!</span>
+            </div>
+            <p style="margin-top: 15px;"><strong>Best Practice:</strong> Always configure multiple archive destinations with ALTERNATE failover.</p>
+        </div>
+    </div>
+
+    <!-- SECTION 5: REDO LOG MANAGEMENT COMMANDS -->
+    <div class="diagram-container">
+        <div class="diagram-title">⚙️ Redo Log Management Commands</div>
+        <div class="diagram-subtitle">Essential DBA commands for redo log and archive management</div>
+        
+        <div class="grid-2" style="gap: 20px;">
+            <!-- Adding Groups/Members -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #1565c0; margin-top: 0;">➕ Adding Redo Log Groups</h3>
+                <div class="code-block" style="margin: 10px 0;">
+<span class="code-comment">-- Add new group with automatic group number</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE</span> 
+  ('/disk1/redo04.log', '/disk2/redo04.log') SIZE 1G;
+
+<span class="code-comment">-- Add new group with explicit group number</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE GROUP 4</span> 
+  ('/disk1/redo04.log', '/disk2/redo04.log') SIZE 1G;
+
+<span class="code-comment">-- Add member to existing group (must be INACTIVE)</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE MEMBER</span> 
+  '/disk3/redo01b.log' TO GROUP 1;
+                </div>
+                <div style="background: #ffebee; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <span style="color: #c62828; font-weight: bold;">⚠️ RULE:</span> Cannot modify CURRENT redo log group!
+                </div>
+            </div>
+            
+            <!-- Dropping Groups/Members -->
+            <div style="background: #ffebee; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #c62828; margin-top: 0;">➖ Dropping Redo Log Groups</h3>
+                <div class="code-block" style="margin: 10px 0;">
+<span class="code-comment">-- Drop entire group (must be INACTIVE)</span>
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE GROUP 3;</span>
+
+<span class="code-comment">-- Drop individual member</span>
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE MEMBER</span> 
+  '/disk1/redo01.log';
+
+<span class="code-comment">-- Force log switch to make group INACTIVE</span>
+<span class="code-keyword">ALTER SYSTEM SWITCH LOGFILE;</span>
+
+<span class="code-comment">-- Check group status first!</span>
+<span class="code-keyword">SELECT</span> group#, status <span class="code-keyword">FROM</span> v$log;
+                </div>
+                <div style="background: #263238; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <span style="color: #ffb74d; font-weight: bold;">📌 RULES:</span>
+                    <ul style="color: white; margin-top: 5px; margin-bottom: 0;">
+                        <li>Database must have at least 2 groups</li>
+                        <li>Cannot drop last member of a group</li>
+                        <li>In ARCHIVELOG: group must be archived first</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Relocating Members -->
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #f57c00; margin-top: 0;">📦 Relocating Redo Log Members</h3>
+                <div class="code-block" style="margin: 10px 0;">
+<span class="code-comment">-- Step 1: Shutdown database</span>
+<span class="code-keyword">SHUTDOWN IMMEDIATE;</span>
+
+<span class="code-comment">-- Step 2: Copy files at OS level</span>
+<span class="code-comment">-- $ cp /old_disk/redo01.log /new_disk/redo01.log</span>
+
+<span class="code-comment">-- Step 3: Startup MOUNT</span>
+<span class="code-keyword">STARTUP MOUNT;</span>
+
+<span class="code-comment">-- Step 4: Rename in control file</span>
+<span class="code-keyword">ALTER DATABASE RENAME FILE</span> 
+  '/old_disk/redo01.log' TO '/new_disk/redo01.log';
+
+<span class="code-comment">-- Step 5: Open database</span>
+<span class="code-keyword">ALTER DATABASE OPEN;</span>
+                </div>
+                <p style="margin-top: 10px; font-weight: bold;">⚠️ Original files must be available and valid during rename!</p>
+            </div>
+            
+            <!-- ARCHIVELOG Commands -->
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #2e7d32; margin-top: 0;">📀 ARCHIVELOG Management</h3>
+                <div class="code-block" style="margin: 10px 0;">
+<span class="code-comment">-- Enable ARCHIVELOG mode</span>
+<span class="code-keyword">SHUTDOWN IMMEDIATE;</span>
+<span class="code-keyword">STARTUP MOUNT;</span>
+<span class="code-keyword">ALTER DATABASE ARCHIVELOG;</span>
+<span class="code-keyword">ALTER DATABASE OPEN;</span>
+
+<span class="code-comment">-- Disable ARCHIVELOG mode</span>
+<span class="code-keyword">SHUTDOWN IMMEDIATE;</span>
+<span class="code-keyword">STARTUP MOUNT;</span>
+<span class="code-keyword">ALTER DATABASE NOARCHIVELOG;</span>
+<span class="code-keyword">ALTER DATABASE OPEN;</span>
+
+<span class="code-comment">-- Check current mode</span>
+<span class="code-keyword">ARCHIVE LOG LIST;</span>
+<span class="code-comment">-- or</span>
+<span class="code-keyword">SELECT</span> log_mode <span class="code-keyword">FROM</span> v$database;
+                </div>
+            </div>
+        </div>
+        
+        <!-- Archive Destination Configuration -->
+        <div style="margin-top: 20px; background: #f3e5f5; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #7b1fa2; margin-top: 0;">📍 Archive Destination Configuration</h3>
+            <div class="grid-2" style="gap: 20px;">
+                <div>
+                    <div class="code-block">
+<span class="code-comment">-- Modern method: LOG_ARCHIVE_DEST_n (up to 31)</span>
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_1='LOCATION=/u01/archive';
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_2='LOCATION=/u02/archive';
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_3='LOCATION=/u03/archive';
+
+<span class="code-comment">-- With FRA (preferred)</span>
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_1='USE_DB_RECOVERY_FILE_DEST';
+
+<span class="code-comment">-- With ALTERNATE failover</span>
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_2='LOCATION=/u02/archive MAX_FAILURE=1 ALTERNATE=3';
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_3='LOCATION=/u03/archive';
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_DEST_STATE_3=ALTERNATE;
+                    </div>
+                </div>
+                <div>
+                    <div class="code-block">
+<span class="code-comment">-- LOG_ARCHIVE_FORMAT (naming)</span>
+<span class="code-comment">-- Include %s %t %r for unique names</span>
+<span class="code-keyword">ALTER SYSTEM SET</span> 
+  LOG_ARCHIVE_FORMAT='arch_%t_%s_%r.arc';
+
+<span class="code-comment">-- Variables:</span>
+<span class="code-comment">-- %s = sequence number</span>
+<span class="code-comment">-- %t = thread number (RAC)</span>
+<span class="code-comment">-- %r = resetlogs ID</span>
+<span class="code-comment">-- %d = database ID</span>
+
+<span class="code-comment">-- NOTE: Ignored if using FRA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 6: REDO VS UNDO - CORE DBA CONCEPTS -->
+    <div class="diagram-container">
+        <div class="diagram-title">🔄 Redo vs Undo - The Complete Picture</div>
+        <div class="diagram-subtitle">Understanding the fundamental difference and how they work together</div>
+        
+        <div class="grid-2" style="gap: 30px;">
+            <!-- Redo Side -->
+            <div style="background: #ffebee; padding: 25px; border-radius: 10px; border: 3px solid #c62828;">
+                <h2 style="color: #c62828; text-align: center; margin-top: 0; font-size: 2em;">🔴 REDO</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="font-size: 1.3em; font-weight: bold; text-align: center;">"How do I REAPPLY what happened?"</p>
+                    <div style="background: #ffcdd2; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <span style="font-weight: bold;">➡️ MOVES DATA FORWARD</span>
+                    </div>
+                    
+                    <h4 style="color: #c62828; margin-bottom: 15px;">📋 Purpose:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">✅ <strong>Media recovery</strong> - restore from backup</li>
+                        <li style="margin: 12px 0;">✅ <strong>Instance crash recovery</strong> - roll forward</li>
+                        <li style="margin: 12px 0;">✅ <strong>Replication</strong> - Data Guard, Streams</li>
+                    </ul>
+                    
+                    <h4 style="color: #c62828; margin-bottom: 15px;">💾 Storage:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">📁 <strong>Online Redo Log Files</strong></li>
+                        <li style="margin: 12px 0;">📦 <strong>Archived Redo Log Files</strong> (if ARCHIVELOG)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Undo Side -->
+            <div style="background: #e8f5e9; padding: 25px; border-radius: 10px; border: 3px solid #2e7d32;">
+                <h2 style="color: #2e7d32; text-align: center; margin-top: 0; font-size: 2em;">🟢 UNDO</h2>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="font-size: 1.3em; font-weight: bold; text-align: center;">"How do I REVERSE what happened?"</p>
+                    <div style="background: #c8e6c9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                        <span style="font-weight: bold;">⬅️ MOVES DATA BACKWARD</span>
+                    </div>
+                    
+                    <h4 style="color: #2e7d32; margin-bottom: 15px;">📋 Purpose:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">✅ <strong>ROLLBACK operations</strong> - undo changes</li>
+                        <li style="margin: 12px 0;">✅ <strong>READ CONSISTENCY</strong> - consistent query results</li>
+                        <li style="margin: 12px 0;">✅ <strong>FLASHBACK operations</strong> - view past data</li>
+                    </ul>
+                    
+                    <h4 style="color: #2e7d32; margin-bottom: 15px;">💾 Storage:</h4>
+                    <ul style="list-style-type: none; padding-left: 0;">
+                        <li style="margin: 12px 0;">📁 <strong>UNDO Tablespaces</strong></li>
+                        <li style="margin: 12px 0;">📂 <strong>Undo Segments</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How they work together in Instance Recovery -->
+        <div style="margin-top: 30px; background: linear-gradient(135deg, #263238 0%, #37474f 100%); padding: 25px; border-radius: 10px; color: white;">
+            <h3 style="color: white; text-align: center; margin-top: 0;">🔄 Instance Crash Recovery: Redo + Undo Together</h3>
+            
+            <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+                <div style="text-align: center; width: 40%;">
+                    <div style="background: #c62828; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 1.5em; font-weight: bold;">PHASE 1</span>
+                    </div>
+                    <div style="background: #ffebee; padding: 20px; border-radius: 8px; color: black;">
+                        <span style="font-size: 1.2em; font-weight: bold;">🔴 ROLL FORWARD</span>
+                        <p style="margin-top: 10px;">SMON reads redo logs and <strong>reapplies ALL changes</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Uses REDO logs</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; width: 40%;">
+                    <div style="background: #2e7d32; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <span style="font-size: 1.5em; font-weight: bold;">PHASE 2</span>
+                    </div>
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; color: black;">
+                        <span style="font-size: 1.2em; font-weight: bold;">🟢 ROLL BACK</span>
+                        <p style="margin-top: 10px;">SMON reads undo and <strong>reverses uncommitted transactions</strong></p>
+                        <p style="font-size: 0.9em; color: #666;">Uses UNDO data</p>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="text-align: center; margin-top: 20px; font-size: 1.1em; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 5px;">
+                <strong>Together they guarantee:</strong> Database consistency and complete recoverability
+            </p>
+        </div>
+    </div>
+
+    <!-- SECTION 7: BEST PRACTICES & PERFORMANCE -->
+    <div class="diagram-container">
+        <div class="diagram-title">✅ Redo Log Best Practices</div>
+        <div class="diagram-subtitle">Production-tested guidelines from real-world DBA experience</div>
+        
+        <div class="grid-3" style="gap: 20px;">
+            <!-- Number of Groups -->
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border-top: 6px solid #2e7d32;">
+                <h3 style="color: #2e7d32; margin-top: 0;">🔢 Number of Groups</h3>
+                <div style="font-size: 2.5em; font-weight: bold; color: #2e7d32; text-align: center; margin: 15px 0;">3-4</div>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Minimum:</strong> 2 groups</li>
+                    <li><strong>Production:</strong> 3 groups minimum</li>
+                    <li><strong>Recommended:</strong> 4 groups if storage allows</li>
+                    <li><strong>Why:</strong> Prevents waits, smoother log switching</li>
+                </ul>
+            </div>
+            
+            <!-- Redo Log Size -->
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; border-top: 6px solid #f57c00;">
+                <h3 style="color: #f57c00; margin-top: 0;">📏 Redo Log Size</h3>
+                <div style="font-size: 2.5em; font-weight: bold; color: #f57c00; text-align: center; margin: 15px 0;">1GB+</div>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Guideline:</strong> Log switches every <strong>15-20 minutes</strong></li>
+                    <li><strong>Too frequent:</strong> Increase size (more frequent than 15 min)</li>
+                    <li><strong>Batch jobs:</strong> Occasional 10-min switches OK</li>
+                    <li><strong>DBCA default:</strong> 200MB (too small for OLTP!)</li>
+                </ul>
+            </div>
+            
+            <!-- Storage Performance -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-top: 6px solid #1565c0;">
+                <h3 style="color: #1565c0; margin-top: 0;">⚡ Storage Performance</h3>
+                <div style="font-size: 1.8em; font-weight: bold; color: #1565c0; text-align: center; margin: 15px 0;">FASTEST AVAILABLE</div>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Redo logs written continuously</strong> by LGWR</li>
+                    <li><strong>High latency = Poor performance</strong></li>
+                    <li><strong>Priority:</strong> Redo logs > Datafiles</li>
+                    <li><strong>Use:</strong> SSD, NVMe, high-speed SAN</li>
+                </ul>
+            </div>
+            
+            <!-- Multiplexing -->
+            <div style="background: #f3e5f5; padding: 20px; border-radius: 8px; border-top: 6px solid #7b1fa2;">
+                <h3 style="color: #7b1fa2; margin-top: 0;">🛡️ Multiplexing</h3>
+                <ul style="margin-top: 10px;">
+                    <li><strong>2+ members per group</strong> on separate disks</li>
+                    <li><strong>Different controllers</strong> if possible</li>
+                    <li><strong>Even with RAID/ASM:</strong> Still multiplex</li>
+                    <li><strong>Conservative = Safe</strong></li>
+                </ul>
+            </div>
+            
+            <!-- ARCHIVELOG -->
+            <div style="background: #ffebee; padding: 20px; border-radius: 8px; border-top: 6px solid #c62828;">
+                <h3 style="color: #c62828; margin-top: 0;">📀 ARCHIVELOG Mode</h3>
+                <ul style="margin-top: 10px;">
+                    <li><strong>ALL production databases</strong> must be in ARCHIVELOG</li>
+                    <li><strong>NOARCHIVELOG:</strong> Test/DEV only</li>
+                    <li><strong>Multiple destinations</strong> with ALTERNATE</li>
+                    <li><strong>Monitor space!</strong> Oracle doesn't auto-delete</li>
+                </ul>
+            </div>
+            
+            <!-- Archive Storage -->
+            <div style="background: #e0f2fe; padding: 20px; border-radius: 8px; border-top: 6px solid #0288d1;">
+                <h3 style="color: #0288d1; margin-top: 0;">💾 Archive Storage</h3>
+                <ul style="margin-top: 10px;">
+                    <li><strong>High capacity</strong> - not performance critical</li>
+                    <li><strong>Use FRA</strong> for automatic organization</li>
+                    <li><strong>Implement deletion policy</strong> (after backup)</li>
+                    <li><strong>RMAN:</strong> DELETE ARCHIVELOG ...</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Golden Guidelines -->
+        <div style="background: linear-gradient(135deg, #c76e1e 0%, #9c5518 100%); color: white; padding: 25px; border-radius: 8px; margin-top: 20px;">
+            <h3 style="color: white; margin-top: 0; text-align: center;">🎯 The DBA's Redo Log Commandments</h3>
+            <div class="grid-2" style="gap: 20px; margin-top: 15px;">
+                <div>
+                    <p style="margin: 10px 0; font-size: 1.1em;">1️⃣ <strong>Never delete or modify online redo logs</strong> - database will crash</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">2️⃣ <strong>Always multiplex</strong> - protect against disk failure</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">3️⃣ <strong>Production = ARCHIVELOG</strong> - no exceptions</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">4️⃣ <strong>Size redo logs for 15-20 min switches</strong> - not too frequent</p>
+                </div>
+                <div>
+                    <p style="margin: 10px 0; font-size: 1.1em;">5️⃣ <strong>Fastest storage for redo logs</strong> - performance critical</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">6️⃣ <strong>Monitor archive destinations</strong> - avoid database hang</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">7️⃣ <strong>Multiple archive destinations</strong> - with ALTERNATE failover</p>
+                    <p style="margin: 10px 0; font-size: 1.1em;">8️⃣ <strong>Delete archive logs after backup</strong> - Oracle won't do it for you</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 8: DYNAMIC PERFORMANCE VIEWS -->
+    <div class="diagram-container">
+        <div class="diagram-title">📊 Essential Dynamic Performance Views</div>
+        <div class="diagram-subtitle">Query these views to monitor and troubleshoot redo logs</div>
+        
+        <div class="grid-2" style="gap: 20px;">
+            <!-- V$LOG -->
+            <div style="background: #263238; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #80cbc4; margin-top: 0;">📋 V$LOG</h3>
+                <p style="color: #e0e0e0;">Redo log group information</p>
+                <div class="code-block" style="background: #1e272b; margin-top: 10px;">
+<span class="code-keyword">SELECT</span> group#, sequence#, bytes/1024/1024 size_mb,
+       status, archived, first_time
+<span class="code-keyword">FROM</span> v$log
+<span class="code-keyword">ORDER BY</span> group#;
+
+<span class="code-comment">-- STATUS values:</span>
+<span class="code-comment">-- CURRENT  → Currently being written</span>
+<span class="code-comment">-- ACTIVE   → Needed for recovery, not current</span>
+<span class="code-comment">-- INACTIVE → Available for reuse</span>
+                </div>
+            </div>
+            
+            <!-- V$LOGFILE -->
+            <div style="background: #263238; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #80cbc4; margin-top: 0;">📁 V$LOGFILE</h3>
+                <p style="color: #e0e0e0;">Redo log member information</p>
+                <div class="code-block" style="background: #1e272b; margin-top: 10px;">
+<span class="code-keyword">SELECT</span> group#, member, status, type
+<span class="code-keyword">FROM</span> v$logfile
+<span class="code-keyword">ORDER BY</span> group#, member;
+
+<span class="code-comment">-- STATUS: INVALID = inaccessible</span>
+<span class="code-comment">-- STATUS: STALE   = incomplete</span>
+<span class="code-comment">-- STATUS: DELETED = removed</span>
+<span class="code-comment">-- NULL = normal</span>
+                </div>
+            </div>
+            
+            <!-- V$ARCHIVE_DEST -->
+            <div style="background: #263238; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #80cbc4; margin-top: 0;">📍 V$ARCHIVE_DEST</h3>
+                <p style="color: #e0e0e0;">Archive destination status</p>
+                <div class="code-block" style="background: #1e272b; margin-top: 10px;">
+<span class="code-keyword">SELECT</span> dest_name, status, binding, 
+       destination, error
+<span class="code-keyword">FROM</span> v$archive_dest
+<span class="code-keyword">WHERE</span> status != 'INACTIVE';
+                </div>
+            </div>
+            
+            <!-- V$ARCHIVED_LOG -->
+            <div style="background: #263238; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #80cbc4; margin-top: 0;">📦 V$ARCHIVED_LOG</h3>
+                <p style="color: #e0e0e0;">Archived redo log history</p>
+                <div class="code-block" style="background: #1e272b; margin-top: 10px;">
+<span class="code-keyword">SELECT</span> sequence#, name, blocks, 
+       completion_time, deleted
+<span class="code-keyword">FROM</span> v$archived_log
+<span class="code-keyword">WHERE</span> completion_time > SYSDATE - 7;
+                </div>
+            </div>
+        </div>
+        
+        <!-- Common Diagnostic Queries -->
+        <div style="margin-top: 20px; background: #fff3cd; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #856404; margin-top: 0;">🔍 Common Diagnostic Queries</h3>
+            <div class="code-block" style="margin-top: 10px;">
+<span class="code-comment">-- Check if archive destination is full</span>
+<span class="code-keyword">SELECT</span> dest_name, error, target, 
+       destination, fail_sequence
+<span class="code-keyword">FROM</span> v$archive_dest
+<span class="code-keyword">WHERE</span> error IS NOT NULL;
+
+<span class="code-comment">-- Find log switch frequency (last 24h)</span>
+<span class="code-keyword">SELECT</span> TO_CHAR(first_time, 'YYYY-MM-DD HH24') hour,
+       COUNT(*) switches
+<span class="code-keyword">FROM</span> v$log_history
+<span class="code-keyword">WHERE</span> first_time > SYSDATE - 1
+<span class="code-keyword">GROUP BY</span> TO_CHAR(first_time, 'YYYY-MM-DD HH24')
+<span class="code-keyword">ORDER BY</span> 1;
+
+<span class="code-comment">-- Check ARCn processes</span>
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> v$archive_processes;
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 9: MULTITENANT (CDB/PDB) CONSIDERATIONS -->
+    <div class="diagram-container">
+        <div class="diagram-title">🏢 Multitenant Architecture (CDB/PDB)</div>
+        <div class="diagram-subtitle">Redo logs in container databases</div>
+        
+        <div style="background: #e8eaf6; padding: 25px; border-radius: 10px; border: 3px solid #3f51b5;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 30px; flex-wrap: wrap;">
+                <div style="text-align: center;">
+                    <div style="background: #3f51b5; color: white; padding: 15px 25px; border-radius: 8px; font-size: 1.3em; font-weight: bold;">
+                        CDB$ROOT
+                    </div>
+                    <div style="margin-top: 15px; background: white; padding: 15px; border-radius: 8px; border: 2px solid #3f51b5;">
+                        <span style="font-weight: bold; color: #c62828;">🔴 Redo Logs belong HERE</span>
+                        <div class="code-block" style="margin-top: 10px; font-size: 0.8em;">
+<span class="code-comment">-- Must connect to CDB$ROOT</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE...</span>
+<span class="code-keyword">ALTER DATABASE ARCHIVELOG;</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="font-size: 2em; color: #666;">↓</div>
+                
+                <div>
+                    <div style="background: #4caf50; color: white; padding: 15px 25px; border-radius: 8px; font-size: 1.3em; font-weight: bold; margin-bottom: 15px;">
+                        PDB1
+                    </div>
+                    <div style="background: #4caf50; color: white; padding: 15px 25px; border-radius: 8px; font-size: 1.3em; font-weight: bold;">
+                        PDB2
+                    </div>
+                    <p style="margin-top: 15px; font-weight: bold; color: #c62828;">❌ Cannot manage redo logs from PDB</p>
+                </div>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                <h4 style="color: #856404; margin-top: 0;">📌 Key Points for Multitenant:</h4>
+                <ul>
+                    <li><strong>Redo logs belong to the CDB</strong> - shared by all PDBs</li>
+                    <li><strong>Must connect to CDB$ROOT</strong> to manage redo logs</li>
+                    <li><strong>Cannot manage redo logs from a PDB</strong> - will get ORA-65040</li>
+                    <li><strong>Redo generation is higher</strong> in multitenant OLTP systems</li>
+                    <li><strong>Redo log groups are typically large</strong> (multi-GB)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 10: COMMON MISTAKES & TROUBLESHOOTING -->
+    <div class="diagram-container">
+        <div class="diagram-title">⚠️ Common Mistakes & Troubleshooting</div>
+        <div class="diagram-subtitle">Learn from others' errors - what NOT to do</div>
+        
+        <div class="grid-2" style="gap: 20px;">
+            <div style="background: #ffebee; padding: 20px; border-radius: 8px; border: 2px solid #c62828;">
+                <h3 style="color: #c62828; margin-top: 0;">❌ CRITICAL MISTAKES</h3>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>🗑️ Deleting online redo logs manually</strong><br>
+                        <span style="color: #c62828;">→ Database crashes immediately</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>💾 Running out of archive space</strong><br>
+                        <span style="color: #c62828;">→ Database HANGS, no log switches possible</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>🔧 Modifying CURRENT redo log</strong><br>
+                        <span style="color: #c62828;">→ ORA-01623, operation not allowed</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>📏 Redo logs too small</strong><br>
+                        <span style="color: #c62828;">→ Excessive log switches, performance issues</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; border: 2px solid #2e7d32;">
+                <h3 style="color: #2e7d32; margin-top: 0;">✅ SOLUTIONS</h3>
+                <ul style="list-style-type: none; padding-left: 0;">
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>🔄 Always use ALTER DATABASE commands</strong><br>
+                        <span style="color: #2e7d32;">→ Never touch redo files at OS level</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>📊 Monitor archive space</strong><br>
+                        <span style="color: #2e7d32;">→ Set up alerts, delete after backup</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>⚡ Force log switch first</strong><br>
+                        <span style="color: #2e7d32;">→ ALTER SYSTEM SWITCH LOGFILE;</span>
+                    </li>
+                    <li style="margin: 15px 0; padding: 10px; background: white; border-radius: 5px;">
+                        <strong>📈 Size for 15-20 min switches</strong><br>
+                        <span style="color: #2e7d32;">→ Add larger groups, drop small ones</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Recovery Scenarios -->
+        <div style="margin-top: 20px; background: #f3e5f5; padding: 20px; border-radius: 8px;">
+            <h3 style="color: #7b1fa2; margin-top: 0;">🆘 Recovery Scenarios</h3>
+            <div class="grid-2" style="gap: 20px;">
+                <div>
+                    <h4>Lost redo log member (multiplexed)</h4>
+                    <div class="code-block" style="margin-top: 5px;">
+<span class="code-comment">-- Database continues running!</span>
+<span class="code-comment">-- Just drop and add new member</span>
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE MEMBER</span> '/lost/redo01.log';
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE MEMBER</span> '/new/redo01.log' TO GROUP 1;
+                    </div>
+                </div>
+                <div>
+                    <h4>Lost all members of INACTIVE group</h4>
+                    <div class="code-block" style="margin-top: 5px;">
+<span class="code-comment">-- Drop the whole group</span>
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE GROUP 3;</span>
+<span class="code-comment">-- Recreate it</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE GROUP 3</span> 
+  ('/disk1/redo03.log', '/disk2/redo03.log') SIZE 1G;
+                    </div>
+                </div>
+            </div>
+            <div style="background: #ffebee; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                <span style="font-weight: bold; color: #c62828;">⚠️ If CURRENT group is lost:</span> 
+                <span>Instance crash, requires incomplete recovery (lose data). This is why multiplexing is CRITICAL!</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 11: QUICK REFERENCE CHEAT SHEET -->
+    <div class="diagram-container" style="background: linear-gradient(135deg, #263238 0%, #37474f 100%);">
+        <div class="diagram-title" style="color: white;">📋 Complete Redo Log Cheat Sheet</div>
+        <div class="diagram-subtitle" style="color: #e0e0e0;">Everything you need in one place</div>
+        
+        <div class="grid-2" style="gap: 20px;">
+            <!-- Command Reference -->
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #c76e1e; margin-top: 0;">⚡ Command Reference</h3>
+                <div class="code-block" style="font-size: 0.85em; max-height: 400px; overflow-y: auto;">
+<span class="code-comment">-- REDO LOG GROUPS</span>
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE</span> GROUP n files SIZE n;
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE GROUP</span> n;
+<span class="code-keyword">ALTER DATABASE ADD LOGFILE MEMBER</span> 'file' TO GROUP n;
+<span class="code-keyword">ALTER DATABASE DROP LOGFILE MEMBER</span> 'file';
+<span class="code-keyword">ALTER DATABASE RENAME FILE</span> 'old' TO 'new';
+
+<span class="code-comment">-- LOG SWITCH</span>
+<span class="code-keyword">ALTER SYSTEM SWITCH LOGFILE;</span>
+<span class="code-keyword">ALTER SYSTEM CHECKPOINT;</span>
+
+<span class="code-comment">-- ARCHIVELOG MODE</span>
+<span class="code-keyword">ALTER DATABASE ARCHIVELOG;</span>
+<span class="code-keyword">ALTER DATABASE NOARCHIVELOG;</span>
+<span class="code-keyword">ARCHIVE LOG LIST;</span>
+
+<span class="code-comment">-- ARCHIVE DESTINATIONS</span>
+<span class="code-keyword">ALTER SYSTEM SET</span> LOG_ARCHIVE_DEST_1='LOCATION=...';
+<span class="code-keyword">ALTER SYSTEM SET</span> LOG_ARCHIVE_FORMAT='arch_%s_%t_%r.arc';
+
+<span class="code-comment">-- MONITORING</span>
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> v$log;
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> v$logfile;
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> v$archive_dest;
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> v$archived_log;
+                </div>
+            </div>
+            
+            <!-- Best Practices Summary -->
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #c76e1e; margin-top: 0;">✅ Best Practices Summary</h3>
+                <div style="margin: 20px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">1</span>
+                        <span><strong>3-4 redo log groups</strong> in production</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">2</span>
+                        <span><strong>2+ members per group</strong> on separate disks</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">3</span>
+                        <span><strong>ARCHIVELOG mode</strong> for all production</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">4</span>
+                        <span><strong>Size for 15-20 min</strong> log switches</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">5</span>
+                        <span><strong>Fastest storage</strong> for online redo logs</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">6</span>
+                        <span><strong>Multiple archive destinations</strong> with failover</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span style="background: #2e7d32; color: white; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;">7</span>
+                        <span><strong>Monitor and delete</strong> archive logs after backup</span>
+                    </div>
+                </div>
+                
+                <div style="background: #ffebee; padding: 15px; border-radius: 5px; margin-top: 15px;">
+                    <span style="font-weight: bold; color: #c62828;">⚠️ NEVER:</span>
+                    <ul style="margin-top: 10px; margin-bottom: 0;">
+                        <li>Delete online redo logs at OS level</li>
+                        <li>Let archive destinations fill up</li>
+                        <li>Modify CURRENT redo log group</li>
+                        <li>Run production in NOARCHIVELOG</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Footer -->
+        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-top: 20px; color: white; text-align: center;">
+            <p style="font-size: 1.2em; margin: 0;">
+                <strong>Redo Logs are the heartbeat of Oracle database recovery</strong>
+            </p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">
+                Protect them with multiplexing, size them appropriately, and always run in ARCHIVELOG mode for production databases.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 30px; padding: 20px; color: #666; font-size: 0.9em; border-top: 1px solid #ddd;">
+        <p><strong>Oracle Redo Logs & Archive Logs - Complete Visual Guide</strong></p>
+        <p>🔴 Redo = Forward recovery (replay changes) | 🟢 Undo = Backward recovery (reverse changes)</p>
+        <p>✅ Production: ARCHIVELOG + Multiplexing + 3-4 groups + 15-20 min log switches</p>
+    </div>
+
+</body>
+</html>

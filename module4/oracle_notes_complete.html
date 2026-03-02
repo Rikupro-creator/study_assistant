@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Database Performance Tuning — Complete Notes</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0f1117;
+    --surface:   #161b27;
+    --surface2:  #1d2535;
+    --border:    #2a3347;
+    --accent:    #e8a857;
+    --accent2:   #6fb3d3;
+    --text:      #d4cfc8;
+    --text-dim:  #7a8499;
+    --text-head: #f0ebe2;
+    --code-bg:   #1a2030;
+    --note-bg:   #1c2030;
+    --note-line: #e8a857;
+    --warn-line: #6fb3d3;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    font-size: 16.5px;
+    line-height: 1.85;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR NAV ── */
+  .nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: 220px;
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 32px 0;
+    z-index: 100;
+  }
+
+  .nav-brand {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .nav-brand .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .nav-brand .title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 0.88em;
+    color: var(--text-head);
+    line-height: 1.3;
+  }
+
+  .nav-section {
+    padding: 6px 20px 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-top: 12px;
+  }
+
+  .nav a {
+    display: block;
+    padding: 5px 20px 5px 24px;
+    font-size: 0.82em;
+    color: var(--text-dim);
+    text-decoration: none;
+    line-height: 1.4;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .nav a:hover {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(232,168,87,0.05);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    margin-left: 220px;
+    max-width: 780px;
+    padding: 72px 56px 120px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding-bottom: 56px;
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero .kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7em;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 18px;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 2.8em;
+    color: var(--text-head);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-bottom: 20px;
+  }
+
+  .hero .desc {
+    font-size: 1.05em;
+    color: var(--text-dim);
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  .hero .meta {
+    margin-top: 28px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .hero .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 3px;
+  }
+
+  /* ── PARTS ── */
+  .part {
+    margin-bottom: 80px;
+  }
+
+  .part-label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 36px;
+  }
+
+  .part-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65em;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(232,168,87,0.1);
+    border: 1px solid rgba(232,168,87,0.25);
+    padding: 4px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .part-label h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+    font-size: 1.5em;
+    color: var(--text-head);
+    line-height: 1.2;
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .part-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── SECTION HEADINGS ── */
+  h2 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--text-head);
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin: 28px 0 8px;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  strong {
+    font-weight: 600;
+    color: var(--text-head);
+  }
+
+  em { font-style: italic; }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    background: var(--code-bg);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── CALLOUTS ── */
+  .note {
+    background: var(--note-bg);
+    border-left: 3px solid var(--note-line);
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.93em;
+    line-height: 1.7;
+  }
+
+  .note .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--note-line);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .info {
+    background: var(--note-bg);
+    border-left: 3px solid var(--warn-line);
+    padding: 16px 20px;
+    margin: 24px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.93em;
+    line-height: 1.7;
+  }
+
+  .info .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--warn-line);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  /* ── STEPS ── */
+  .steps { margin: 20px 0; }
+
+  .step-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 16px;
+    margin-bottom: 18px;
+    align-items: start;
+  }
+
+  .step-item .n {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .step-item .body { padding-top: 4px; }
+  .step-item .body strong { display: block; color: var(--text-head); margin-bottom: 4px; }
+  .step-item .body p { margin-bottom: 0; font-size: 0.95em; }
+
+  /* ── ATTRIBUTE GRID (issue attributes) ── */
+  .attr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .attr-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+
+  .attr-card .q {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .attr-card p { font-size: 0.88em; margin: 0; line-height: 1.6; }
+
+  /* ── STAT TYPE CARDS ── */
+  .stat-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    border-top: 3px solid var(--accent);
+  }
+
+  .stat-card:nth-child(2) { border-top-color: var(--accent2); }
+  .stat-card:nth-child(3) { border-top-color: #a57fc4; }
+
+  .stat-card .name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .stat-card .title {
+    font-weight: 600;
+    color: var(--text-head);
+    font-size: 0.95em;
+    margin-bottom: 8px;
+  }
+
+  .stat-card p { font-size: 0.83em; line-height: 1.6; margin: 0; }
+
+  /* ── COMPARISON TABLE ── */
+  .cmp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.9em;
+  }
+
+  .cmp-table th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  .cmp-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .cmp-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78em;
+    color: var(--accent2);
+    background: var(--surface2);
+  }
+
+  /* ── PARAM TABLE ── */
+  .param-table { margin: 20px 0; }
+
+  .param-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .param-row:last-child { border-bottom: none; }
+
+  .param-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: var(--accent);
+    padding: 12px 14px;
+    background: var(--surface2);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 14px;
+    border-right: 1px solid var(--border);
+  }
+
+  .param-desc {
+    padding: 12px 16px;
+    font-size: 0.88em;
+    line-height: 1.65;
+    background: var(--surface);
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .nav { display: none; }
+    .main { margin-left: 0; padding: 40px 24px 80px; }
+    .attr-grid, .stat-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="nav">
+  <div class="nav-brand">
+    <span class="logo">Course Notes</span>
+    <span class="title">Oracle DB Performance Tuning</span>
+  </div>
+
+  <div class="nav-section">Foundations</div>
+  <a href="#p01">Introduction & Areas</a>
+  <a href="#p02">IT Systems & Hardware</a>
+
+  <div class="nav-section">Core Concepts</div>
+  <a href="#p03">Tools & Statistics</a>
+  <a href="#p04">Time Model</a>
+  <a href="#p05">Instance Activity & Waits</a>
+
+  <div class="nav-section">Diagnostics</div>
+  <a href="#p06">Metrics & Histograms</a>
+  <a href="#p07">Server Alerts</a>
+  <a href="#p08">ADDM</a>
+  <a href="#p09">ADDM Comparison</a>
+
+  <div class="nav-section">Tooling</div>
+  <a href="#p10">Statspack</a>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="kicker">Oracle Database · Performance Tuning</span>
+    <h1>Complete Course Notes</h1>
+    <p class="desc">A structured reference covering all major topics from performance tuning fundamentals through ADDM, wait events, metrics, server alerts, and Statspack.</p>
+    <div class="meta">
+      <span class="tag">10 Sections</span>
+      <span class="tag">Oracle 12c</span>
+      <span class="tag">DBA Reference</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 01 — Introduction
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p01">
+    <div class="part-label">
+      <span class="part-num">Part 01</span>
+      <h2>Introduction & Tuning Areas</h2>
+    </div>
+
+    <h2>The Three Areas of Oracle Performance Tuning</h2>
+    <p>Oracle performance tuning spans three intersecting areas. <strong>Performance Tuning Tools</strong> are the instruments DBAs reach for — V$ views, OS utilities, database-callable facilities, and third-party products. <strong>SQL Tuning</strong> involves writing efficient SQL, influencing the optimizer, and creating structures like indexes that help it. <strong>Instance Tuning</strong> addresses the database at the structural level: the SGA, disk I/O, background processes, client sessions, and the OS layer beneath it all.</p>
+
+    <div class="note">
+      <span class="label">Scope</span>
+      This course focuses on Performance Tuning Tools and Instance Tuning. SQL Tuning is not covered.
+    </div>
+
+    <h2>Performance Issue Attributes</h2>
+    <p>Before diagnosing any issue, establish what you're dealing with by answering five questions:</p>
+
+    <div class="attr-grid">
+      <div class="attr-card">
+        <div class="q">Scope</div>
+        <p>Is the entire system affected, or just part of it? A full-system slowdown points to shared resources (CPU, I/O subsystem). A partial issue — one report taking 2 minutes, an ETL that grew from 3 hours to 12 — points somewhere specific.</p>
+      </div>
+      <div class="attr-card">
+        <div class="q">Slow or Hanging?</div>
+        <p>A hanging situation — where the system appears frozen — is also a performance issue. The diagnosis path differs from a slow-response investigation.</p>
+      </div>
+      <div class="attr-card">
+        <div class="q">Permanent or Intermittent?</div>
+        <p>Intermittent issues are harder to catch and diagnose. They require longer observation windows and often more invasive instrumentation.</p>
+      </div>
+      <div class="attr-card">
+        <div class="q">Reproducible?</div>
+        <p>Reproducible issues are dramatically easier to trace — you can instrument and observe. Non-reproducible ones require relying on historical data.</p>
+      </div>
+    </div>
+
+    <div class="attr-card" style="margin-bottom:16px;">
+      <div class="q">Errors Involved?</div>
+      <p>Some errors are performance issues in disguise. A full archivelog destination hangs the database. An undersized shared pool triggers ORA-04031. Always check the alert log early.</p>
+    </div>
+
+    <h2>Oracle's Performance Tuning Methodology</h2>
+    <p>Because tuning touches every layer of the IT stack, there is no universal procedure — only a methodology. Two DBAs may follow different steps yet apply the same approach. This methodology begins <em>after</em> gathering issue attributes.</p>
+
+    <div class="steps">
+      <div class="step-item">
+        <div class="n">1</div>
+        <div class="body">
+          <strong>Set a measurable target</strong>
+          <p>Ask how long the operation used to take. That baseline becomes your target. Without a target, you have no way to know when you're done.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">2</div>
+        <div class="body">
+          <strong>Gather technical symptoms</strong>
+          <p>The most important step — everything downstream depends on it. Use AWR reports, comparison AWR reports, V$ views, ADDM, the alert log, SQL tracing, and OS utilities. "Symptoms" here means technical indicators, not user descriptions.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">3</div>
+        <div class="body">
+          <strong>List possible causes</strong>
+          <p>Map the symptoms to known causes. For unfamiliar symptoms, consult Oracle Support documentation.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">4</div>
+        <div class="body">
+          <strong>Develop a trial solution</strong>
+          <p>Could be as simple as creating an index or following an ADDM recommendation. Could involve configuration or structural changes.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">5</div>
+        <div class="body">
+          <strong>Test in a test environment</strong>
+          <p>Mirror production as closely as possible. Use the same workload — Oracle's Database Replay tool can capture and replay production workloads on a test system.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">6</div>
+        <div class="body">
+          <strong>Check the outcome</strong>
+          <p>If the target is hit, stop. Further optimization beyond the target is a proactive development task, not tuning. If the target is missed, return to Step 3 with a different approach.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="label">Emergency Exception</span>
+      When the entire system is unavailable — archivelog destination full, for instance — treat it as an emergency. Skip test environment validation and act immediately to restore service.
+    </div>
+
+    <h2>Describing System Workload</h2>
+    <p>A DBA should be able to quantify workload in concrete terms for both tuning and stakeholder communication. Example: 100 users, one transaction each every 5 minutes, over an 8-hour day → 20 transactions/minute on average, 9,600/day. But workload isn't flat — always design for peak, not average. In this case, a reasonable design target might be 120 transactions/minute.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 02 — IT Systems & Hardware
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p02">
+    <div class="part-label">
+      <span class="part-num">Part 02</span>
+      <h2>IT Systems &amp; Hardware</h2>
+    </div>
+
+    <h2>Server Performance Components</h2>
+    <p>Oracle runs on top of an OS, which runs on top of hardware. Understanding the hardware layer is essential context for database tuning. The four components that govern server performance are CPU, memory, storage, and network. In production, you cannot change hardware specs — you monitor <em>utilization</em> and <em>rate of consumption</em> against the fixed capacity.</p>
+
+    <h3>CPU</h3>
+    <p>Performance is shaped by socket count, core count, cache size and level, clock speed, and processor architecture. More cores means more concurrent work can be handled — and typically higher Oracle licensing cost.</p>
+
+    <h3>Memory</h3>
+    <p>Type (DDR4, RDIMM, LRDIMM, NVDIMM) and transfer rate (MT/s) determine raw speed. The critical concern for a DBA: if the OS cannot find free memory, it swaps to disk — orders of magnitude slower. Monitor free memory closely.</p>
+
+    <h3>Storage</h3>
+    <p>Mechanical disks are a historic bottleneck; SSDs are far faster. Storage performance is measured in IOPS, latency, and throughput (MB/s). RAID configuration and connection type also affect effective performance. For multiple storage arrays, watch load distribution — an imbalanced setup creates a hidden bottleneck on the most-used path.</p>
+
+    <h3>Network</h3>
+    <p>Measured in bandwidth — 1 Gbps and 10 Gbps Ethernet are common. Utilization approaching 90% causes packet queuing. Persistent faulty packet reports signal a network health issue requiring investigation.</p>
+
+    <h2>The IT Technology Stack</h2>
+    <p>A typical system runs: database at the back, accessed by an application server via network, with clients at the front. Real deployments add firewalls, load balancers, and internet connections. A problem at any layer can surface as a performance issue at any other.</p>
+
+    <p>The most impactful layer for performance is <strong>application logic</strong>. Developers historically optimize for correctness, not efficiency. The classic example: a full table scan returning a few rows causes massive I/O contention for even a handful of users. A single well-chosen index transforms that into a few block reads. Most Oracle tuning targets exactly this — minimizing resource consumption per operation.</p>
+
+    <div class="note">
+      <span class="label">Course Scope</span>
+      This course focuses on the database layer. The goal is to identify whether a performance issue originates there, and if poorly written SQL is involved, isolate those statements for tuning or developer escalation.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 03 — Tools & Statistics
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p03">
+    <div class="part-label">
+      <span class="part-num">Part 03</span>
+      <h2>Performance Tuning Tools &amp; Statistics</h2>
+    </div>
+
+    <h2>Oracle's Performance Tuning Toolset</h2>
+    <p><strong>V$ performance views</strong> live in memory and reset on instance restart — the most commonly used DBA diagnostic tool. <strong>Data dictionary views</strong> persist across restarts and live in tablespaces. <strong>AWR (Automatic Workload Repository)</strong> is the primary snapshot and reporting tool, but requires a separate license. Without it, use Statspack. <strong>ADDM</strong> proactively analyzes AWR data to identify and predict issues. <strong>Advisors</strong> provide targeted recommendations for specific areas. The <strong>alert log</strong> and <strong>trace files</strong> (auto-generated or manually triggered) round out the toolset. GUI access is available via EM Database Express (free) or OEM Cloud Control (licensed).</p>
+
+    <h2>The Three Types of Performance Statistics</h2>
+
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="name">Type 01</div>
+        <div class="title">Cumulative</div>
+        <p>Raw counts accumulated since the last instance startup. Reset on restart. Most are only meaningful compared over time. Some are intrinsically useful — enqueue waits should barely appear in a healthy system. Examples: time model, instance wait events.</p>
+      </div>
+      <div class="stat-card">
+        <div class="name">Type 02</div>
+        <div class="title">Metrics</div>
+        <p>The rate of change of a cumulative statistic, measured against time, transactions, or calls. The primary tool for detecting issues before they escalate. Power ADDM, AWR, and server alerts. E.g., database calls per second.</p>
+      </div>
+      <div class="stat-card">
+        <div class="name">Type 03</div>
+        <div class="title">Sampled</div>
+        <p>Statistics saved as periodic snapshots, enabling historical look-back. Lets you diagnose issues that occurred in the past. Main sources: ADDM, AWR, and Active Session History (ASH).</p>
+      </div>
+    </div>
+
+    <h2>STATISTICS_LEVEL Parameter</h2>
+    <p>Controls the depth of statistics Oracle collects. Three values:</p>
+    <div class="param-table">
+      <div class="param-row">
+        <div class="param-name">BASIC</div>
+        <div class="param-desc">Disables most performance statistics and all automatic advisors. Use only for static-data, static-load databases where continuous collection adds no value.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">TYPICAL</div>
+        <div class="param-desc">Default. Collects all major statistics, runs advisors on schedule. Sufficient for most production systems.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">ALL</div>
+        <div class="param-desc">Adds timed OS statistics and execution plan statistics. Higher overhead. Used during active performance investigations. Can be set at session level — no need to change the whole instance when tuning one session.</div>
+      </div>
+    </div>
+    <p>To see which internal parameters each setting affects, query <code>V$STATISTICS_LEVEL</code>.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 04 — Time Model
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p04">
+    <div class="part-label">
+      <span class="part-num">Part 04</span>
+      <h2>The Time Model</h2>
+    </div>
+
+    <h2>DB Time, DB CPU &amp; DB Wait Time</h2>
+    <p>When no client request is being served, the database registers <em>idle wait events</em>. When a request arrives, the database consumes CPU, memory, and storage to process it. The time spent actively executing is <strong>DB CPU</strong>. Because resources are shared, the database often waits for a busy resource before proceeding — each such wait is a named <strong>wait event</strong>. The total of all non-idle waits is <strong>DB Wait Time</strong>.</p>
+
+    <p>These two together make <strong>DB Time</strong> — the total time the database spends actively serving client requests:</p>
+
+    <div class="info">
+      <span class="label">Formula</span>
+      DB Time = DB CPU + Total Non-Idle Wait Time
+    </div>
+
+    <p>The <strong>Time Model</strong> is the set of statistics that classifies where DB time was spent. In Oracle 12c, it has roughly 20 categories — SQL execution elapsed time, hard/soft parse time, PL/SQL execution elapsed time, and others.</p>
+
+    <h2>Important: DB Time Can Exceed Clock Time</h2>
+    <p>DB time aggregates across all sessions. With 8 CPU cores, one real-time minute provides 8 CPU-minutes of capacity. If 10 sessions are each waiting simultaneously, all their wait times stack into DB time. A DB time of 2 hours in one real-time hour is perfectly normal on a busy, multi-core system.</p>
+
+    <h2>Time Model Views</h2>
+    <p><strong><code>V$SYS_TIME_MODEL</code></strong> — system-wide accumulated times since last startup, in microseconds, organized hierarchically with DB time at the top. A second tree alongside it tracks <strong>Background Elapsed Time</strong> (excluded from DB time, but included to capture RMAN's impact since it's DBA-initiated and resource-intensive).</p>
+    <p><strong><code>V$SESS_TIME_MODEL</code></strong> — same structure at the individual session level. Use it to identify which sessions consume the most DB time or DB CPU. Note: terminated sessions are not visible.</p>
+
+    <h2>Why DB Time Matters</h2>
+    <p>DB time is the single best indicator of database workload. It rises with load and falls when the database is idle. Beyond that, it enables four key diagnostic uses:</p>
+
+    <div class="steps">
+      <div class="step-item">
+        <div class="n">1</div>
+        <div class="body">
+          <strong>Measure overall load</strong>
+          <p>If DB time is growing, the database is receiving more work. If it's flat, workload is stable.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">2</div>
+        <div class="body">
+          <strong>Assess wait ratio</strong>
+          <p>If total wait time is 50%+ of DB time, the system is spending more time waiting than working. This is a red flag for a poorly performing system.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">3</div>
+        <div class="body">
+          <strong>Measure change impact</strong>
+          <p>Added memory? Tuned a query? DB time before and after quantifies the real impact of the change.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">4</div>
+        <div class="body">
+          <strong>Spot operation anomalies</strong>
+          <p>If hard parses represent an unusually high share of DB time, that's worth investigating further — it's not normal in a well-tuned system.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>Measuring Scalability with DB Time</h2>
+    <p>As user load increases, both DB CPU and wait time should rise in proportion — that's a scalable system. At some point, wait time starts growing much faster than CPU time. That inflection is where users begin noticing degradation. Example data point: at 10 users, waits = 18% of DB time. At 50 users, waits = 47% (wait time +900s, CPU +160s). At 100 users, waits = 70% — clearly unacceptable.</p>
+
+    <h2>Historical Data: DBA_HIST_SYS_TIME_MODEL</h2>
+    <p>V$SYS_TIME_MODEL accumulates since startup and can't tell you what happened in a specific window. Oracle snapshots it hourly into <code>DBA_HIST_SYS_TIME_MODEL</code>. While queryable directly, the easiest way to read it is through an AWR report, which consolidates most DBA_HIST views into one readable document.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 05 — Instance Activity & Wait Events
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p05">
+    <div class="part-label">
+      <span class="part-num">Part 05</span>
+      <h2>Instance Activity &amp; Wait Events</h2>
+    </div>
+
+    <h2>Instance Activity Views</h2>
+    <p>While the time model gives high-level DB time breakdowns, <strong>instance activity views</strong> provide granular counters for hundreds of specific operations. The primary view is <strong><code>V$SYSSTAT</code></strong> — instance-level statistics accumulated since startup. It holds a statistic name and its cumulative value. Statistics are identified by name (not number — numbers can change across Oracle versions, names don't). Commonly watched: parse time CPU, physical reads, user commits.</p>
+
+    <p>To explore what's available with descriptions, query <code>V$STATNAME</code>. For service-level stats: <code>V$SERVICESTATS</code>. For session-level: <code>V$SESSTAT</code> (join to <code>V$STATNAME</code> for names). For the current session specifically: <code>V$MYSTAT</code>. For object-level detail including wait events broken down by segment: <code>V$SEGMENT_STATISTICS</code> — this one includes statistic names natively, so no join needed.</p>
+
+    <h2>Wait Events</h2>
+    <p>A wait event is a named record of the database waiting for a specific resource. There are over 600. The real-time diagnostic views are <strong><code>V$SESSION_WAIT</code></strong> and <strong><code>V$SESSION</code></strong>, which show events currently held by active sessions.</p>
+
+    <h3>Reading Wait Columns</h3>
+
+    <div class="param-table">
+      <div class="param-row">
+        <div class="param-name">STATE</div>
+        <div class="param-desc"><strong>WAITING</strong> — currently waiting. <strong>WAITED UNKNOWN TIME</strong> — just finished, duration unknown (set <code>TIMED_STATISTICS=TRUE</code>). <strong>WAITED SHORT TIME</strong> — under 1/100s. <strong>WAITED KNOWN TIME</strong> — finished, duration in WAIT_TIME.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">WAIT_TIME</div>
+        <div class="param-desc">Positive = last wait duration in 1/100s. 0 = still waiting. -1 = under 1/100s. -2 = timing unavailable.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">SECONDS_IN_WAIT</div>
+        <div class="param-desc">Current wait duration in seconds. Only meaningful when STATE = WAITING.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">P1, P2, P3</div>
+        <div class="param-desc">Event-specific parameters (object, file, block, or lock ID). Names in P1TEXT, P2TEXT, P3TEXT. Documented in Oracle Reference Appendix C.</div>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="label">Quick Rule</span>
+      Session is WAITING? → look at SECONDS_IN_WAIT. Wait has finished? → look at WAIT_TIME.
+    </div>
+
+    <h3>Common Wait Events</h3>
+    <p><strong>Buffer busy waits</strong> — process waiting for a data block in the buffer cache to become available. <strong>Free buffer waits</strong> — buffer cache is full. <strong>DB file sequential read</strong> — single-block read (index lookup, etc.). <strong>DB file scattered read</strong> — multi-block read (full table scan, etc.). <strong>Enqueue waits</strong> — serializing concurrent access to a resource. <strong>Library cache waits</strong> — pinning/locking an object in the library cache. <strong>Log buffer space</strong> — redo log buffer full. <strong>Log file sync</strong> — waiting for redo write to complete.</p>
+
+    <div class="note">
+      <span class="label">Key Principle</span>
+      Wait events are <em>symptoms</em>, not causes. They point toward the root cause but are not the root cause themselves. Some belong at the top of the wait list in a healthy system. Others should never appear there — their presence signals a real problem. Learning which is which is a major part of this course.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 06 — Metrics & Histograms
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p06">
+    <div class="part-label">
+      <span class="part-num">Part 06</span>
+      <h2>Metrics &amp; Event Histograms</h2>
+    </div>
+
+    <h2>What Metrics Tell You That Statistics Don't</h2>
+    <p>A cumulative statistic just accumulates upward — it shows total volume but not pace or timing. A <strong>metric</strong> shows the <em>rate of change</em> of that statistic over a short interval. A graph of accumulated physical reads looks like a ramp. The same data as a metric shows exactly when reads spiked and by how much. That's the diagnostic value.</p>
+
+    <p>Most metrics are time-based (per second), but some use other dimensions (per transaction, per session). Metrics feed ADDM, AWR, and server alert systems. The full catalog is in <code>V$METRIC_NAME</code>. Oracle computes metrics for system, session, file, and wait event statistics.</p>
+
+    <h2>Metric Views</h2>
+    <p>V$-prefixed metric views live in memory, covering the last hour, updated every 15–60 seconds (varies by metric). When an AWR snapshot is taken, these are copied to their DBA_ counterparts with a SNAP_ID added. <code>V$SYSMETRIC_HISTORY</code> → <code>DBA_HIST_SYSMETRIC_HISTORY</code>. Not all V$ metrics are copied to DBA_ views. In normal operations, you rarely query these directly — tools consume them for you — but you may reference them to verify tool outputs.</p>
+
+    <h2>Event Histograms</h2>
+    <p>A metric spike (say, physical reads per second) could mean normal load growth or a system problem. Histograms let you distinguish the two. They bucket wait event occurrences by duration — each bucket represents a time range, and its value is how many waits fell there. Buckets double: &lt;1ms, 1–2ms, 2–4ms, 4–8ms, 8–16ms, 16–32ms, 32–64ms…</p>
+
+    <p>If your storage normally delivers I/O in ~10ms and the histogram shows most waits concentrated in the 32–64ms bucket — something is wrong with the storage subsystem. If most waits sit in the 8–16ms bucket — that's close to normal, and the spike is likely just higher user load or a batch job starting.</p>
+
+    <h3>Histogram Views</h3>
+    <p><code>V$EVENT_HISTOGRAM</code> — ~148 events, in milliseconds. <code>V$EVENT_HISTOGRAM_MICRO</code> — same data in microseconds. <code>DBA_HIST_EVENT_HISTOGRAM</code> — AWR-backed historical version. <code>V$FILE_HISTOGRAM</code> — single-block reads per data file.</p>
+
+    <div class="note">
+      <span class="label">Practical Note</span>
+      AWR reports present histogram data in tabular format, which is easier to read than querying V$ views directly. Know how to interpret histograms; you usually won't need to query them manually.
+    </div>
+
+    <div class="info">
+      <span class="label">Don't Confuse</span>
+      These are <em>wait event histograms</em>. Optimizer statistics histograms are a completely separate concept used in SQL tuning — not relevant here.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 07 — Server Alerts
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p07">
+    <div class="part-label">
+      <span class="part-num">Part 07</span>
+      <h2>Server Generated Alerts</h2>
+    </div>
+
+    <h2>Proactive Alerting</h2>
+    <p>Oracle's server generated alerts fire automatically when a metric crosses a predefined threshold, or when a specific event occurs. <strong>Threshold-based examples:</strong> physical reads/sec, user commits/sec, SQL service response time. <strong>Event-based examples:</strong> snapshot too old, resumable session suspended, recovery area space usage.</p>
+
+    <p>Two severity levels exist. A <strong>warning</strong> fires at the lower threshold — early notice. A <strong>critical</strong> fires at the upper threshold — needs immediate attention. Manage alerts via OEM (easiest) or programmatically via the <code>DBMS_SERVER_ALERT</code> package.</p>
+
+    <h2>Setting Thresholds: DBMS_SERVER_ALERT.SET_THRESHOLD</h2>
+
+    <div class="param-table">
+      <div class="param-row">
+        <div class="param-name">METRIC_ID</div>
+        <div class="param-desc">The metric to monitor. Full list in PL/SQL Packages Reference, Table 143-3.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">WARNING_OPERATOR</div>
+        <div class="param-desc">Comparison operator for warning threshold. Uses package constants for =, &gt;, &gt;=, &lt;, &lt;=, !=, list, or DO_NOT_CHECK (disables warning).</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">WARNING_VALUE</div>
+        <div class="param-desc">The warning threshold value. NULL = no warning alert.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">CRITICAL_OPERATOR / CRITICAL_VALUE</div>
+        <div class="param-desc">Same pattern, for the critical level.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">OBSERVATION_PERIOD</div>
+        <div class="param-desc">Minutes over which metric is computed and checked. Default: 1 minute.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">CONSECUTIVE_OCCURRENCES</div>
+        <div class="param-desc">How many consecutive violations before the alert fires. Default: 1. Increase to tolerate expected brief spikes — e.g., short session blocking in a heavy-load app.</div>
+      </div>
+      <div class="param-row">
+        <div class="param-name">OBJECT_TYPE / OBJECT_NAME</div>
+        <div class="param-desc">Scope the threshold to a specific object type (system, file, service, tablespace, session) and named object. Constants in Table 143-1 of the documentation.</div>
+      </div>
+    </div>
+
+    <h2>Default Thresholds &amp; Retrieving Alert Info</h2>
+    <p>Out of the box, only one threshold is active: tablespace space usage — warning at ≥85%, critical at >97%. No performance metrics are monitored by default. Query <code>DBA_THRESHOLDS</code> to see configured thresholds. Use <code>DBMS_SERVER_ALERT.GET_THRESHOLD</code> to retrieve a specific metric's threshold programmatically.</p>
+
+    <p>For generated alerts: <code>DBA_OUTSTANDING_ALERTS</code> (active, uncleared), <code>DBA_ALERT_HISTORY</code> (cleared), <code>DBA_ALERT_HISTORY_DETAIL</code> (both).</p>
+
+    <h2>Best Practices</h2>
+    <p>No universal thresholds exist — every system behaves differently. Build your baseline by reading AWR reports repeatedly while the system is healthy, then configure thresholds that flag meaningful deviations. For critical systems, connect alerts to email or SMS. If you have OEM, use its alerting system instead of the PL/SQL package.</p>
+
+    <div class="note">
+      <span class="label">Batch Processing Trap</span>
+      Thresholds set for normal OLTP workload will fire false alarms during batch windows. Oracle recommends <strong>adaptive thresholds</strong> for metrics like this — they learn from system behavior patterns and adjust automatically. Covered in a later lecture.
+    </div>
+
+    <div class="info">
+      <span class="label">Remember</span>
+      Server alerts supplement your monitoring — they don't replace it. OS-level metrics and statistics outside Oracle's standard alert framework still need separate monitoring.
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 08 — ADDM
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p08">
+    <div class="part-label">
+      <span class="part-num">Part 08</span>
+      <h2>ADDM — Automatic Database Diagnostic Monitor</h2>
+    </div>
+
+    <h2>What ADDM Does</h2>
+    <p>ADDM reads AWR snapshots for a target period — and in-memory views where needed — to detect existing performance issues and predict ones likely to emerge soon. It then produces findings and recommendations. By default it runs automatically after each AWR snapshot, analyzing the interval between the two most recent. It can also be invoked manually across any snapshot range. All results are stored in the AWR.</p>
+
+    <p>ADDM's performance indicator is <strong>DB time</strong>. Every finding and recommendation aims at reducing DB time for the detected bottleneck. ADDM performs analysis in two dimensions simultaneously: user-request operations (connection time, SQL execution, user calls) and resource metrics (CPU, memory, I/O, database locks). In both dimensions it does cause-and-effect analysis — symptoms first, then root cause.</p>
+
+    <div class="note">
+      <span class="label">License Required</span>
+      ADDM requires the same license as AWR. No AWR license = no ADDM.
+    </div>
+
+    <h2>Accessing ADDM</h2>
+
+    <h3>Via EM Express</h3>
+    <p>Performance Hub → ADDM tab. Lists tasks by time period. Each task shows finding count and average active sessions. Click a task to see actionable findings and informational findings. The informational panel tells you what's <em>not</em> a problem — useful for narrowing scope. Each actionable finding shows its DB time impact percentage, recommendations, rationale, and expected benefit.</p>
+
+    <h3>In the AWR Report</h3>
+    <p>ADDM appears as the first section after the header, and again as a full copy at the report's end. Findings are ordered by percentage impact on average active sessions. Average active sessions = DB time ÷ elapsed time (both in the report header).</p>
+
+    <p>When reading: check <strong>dependencies before acting on order</strong>. If findings include top SQL, high CPU usage, and undersized SGA — investigate CPU and SGA first. A slow SQL statement may simply be a symptom of the SGA being too small. Fix the root cause, generate a fresh AWR report, and confirm the downstream findings have cleared.</p>
+
+    <h3>From SQL*Plus</h3>
+    <p>Use <code>DBMS_ADVISOR.GET_TASK_REPORT(task_name)</code>. Task names come from data dictionary views. Output is text only — no HTML — but well structured and readable.</p>
+
+    <div class="info">
+      <span class="label">Perspective</span>
+      ADDM is a tool, not a performance expert. It identifies areas of concern. Validating its recommendations and understanding their dependencies is your job as a DBA.
+    </div>
+
+    <h2>Running ADDM Manually</h2>
+    <p>Required when the default two-snapshot window is too narrow. Condition: no instance restart within the analysis period.</p>
+
+    <div class="steps">
+      <div class="step-item">
+        <div class="n">A</div>
+        <div class="body">
+          <strong>DBMS_ADVISOR package</strong>
+          <p>Create a task → set begin/end snapshot IDs via <code>SET_TASK_PARAMETER</code> → execute with <code>EXECUTE_TASK</code> → retrieve with <code>GET_TASK_REPORT</code>.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="n">B</div>
+        <div class="body">
+          <strong>Run addmrpt.sql (simpler)</strong>
+          <p>Prompts for begin/end snapshot IDs and a report filename. Generates and saves automatically. Use <code>addmrpti.sql</code> for RAC.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 09 — ADDM Comparison Report
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p09">
+    <div class="part-label">
+      <span class="part-num">Part 09</span>
+      <h2>ADDM Comparison Report</h2>
+    </div>
+
+    <h2>Purpose</h2>
+    <p>The ADDM comparison report measures the performance impact of a specific change — a parameter tweak, index creation, hardware upgrade, or any planned intervention. Unlike the AWR comparison report (which surfaces statistical deltas for the DBA to interpret), the ADDM comparison report <em>attempts the interpretation for you</em>, linking detected system changes to observed performance differences via cause-and-effect analysis.</p>
+
+    <h2>Base Period vs Compare Period</h2>
+    <p>The <strong>base period</strong> covers AWR snapshots from before the change — the normal system state. The <strong>compare period</strong> covers snapshots after the change, whether that represents a regression or an improvement. ADDM identifies configuration changes (SGA size, parameters), measures the performance delta, and tries to map changes to outcomes.</p>
+
+    <h2>SQL Commonality</h2>
+    <p>SQL commonality measures how similar the SQL workload is between the two periods (0–100%). The higher, the more reliable the comparison. <strong>Treat findings as reliable only at 80%+ commonality.</strong> Below that, findings still have potential value but need additional manual verification. When using this report with Oracle Real Application Testing (its intended use), commonality is naturally very high.</p>
+
+    <h2>Generating the Report</h2>
+    <p>Single instance: <code>DBMS_ADDM.COMPARE_INSTANCES</code>. RAC: <code>DBMS_ADDM.COMPARE_DATABASES</code>. Pass begin/end snapshot IDs for both the base period and compare period.</p>
+
+    <h2>Reading the Report</h2>
+    <p>Check SQL commonality at the top first. Two load graphs appear in the middle — base period and compare period — each with a reference line for CPU core count. Three tabs below: <strong>Configuration</strong> (system changes detected), <strong>Findings</strong> (performance differences with regression/improvement flags and descriptions), <strong>Resource</strong> (CPU, memory, I/O, interconnect comparison side by side).</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       PART 10 — Statspack
+  ════════════════════════════════════════════════════ -->
+  <div class="part" id="p10">
+    <div class="part-label">
+      <span class="part-num">Part 10</span>
+      <h2>Statspack</h2>
+    </div>
+
+    <h2>When to Use Statspack</h2>
+    <p>Statspack predates AWR (introduced pre-10g) and remains available in Oracle 12c. Its single advantage: no separate license needed. The decision rule is simple — <strong>if you have an AWR license, use AWR and ignore Statspack.</strong> If you don't, Statspack is your primary snapshot and reporting tool.</p>
+
+    <table class="cmp-table">
+      <tr>
+        <th>Feature</th>
+        <th>AWR</th>
+        <th>Statspack</th>
+      </tr>
+      <tr>
+        <td>License</td>
+        <td>Requires separate Diagnostic Pack license</td>
+        <td>Included with standard DB license</td>
+      </tr>
+      <tr>
+        <td>ADDM</td>
+        <td>✓ Supported</td>
+        <td>✗ Not available</td>
+      </tr>
+      <tr>
+        <td>Active Session History</td>
+        <td>✓ Included</td>
+        <td>✗ Not included</td>
+      </tr>
+      <tr>
+        <td>Automatic snapshots</td>
+        <td>✓ Built-in</td>
+        <td>✗ Must build your own scheduler</td>
+      </tr>
+      <tr>
+        <td>Report format</td>
+        <td>HTML and text</td>
+        <td>Text only</td>
+      </tr>
+      <tr>
+        <td>Issue detection depth</td>
+        <td>Broader — some issue types only visible via AWR</td>
+        <td>Narrower</td>
+      </tr>
+    </table>
+
+    <h2>Installation</h2>
+    <p>Not installed by default. Run <code>spcreate.sql</code> from <code>$ORACLE_HOME/rdbms/admin</code>. Creates a schema named <strong>PERFSTAT</strong>. Interactive mode prompts for tablespace, temp tablespace, and password. Batch mode: assign variables then run the script. To uninstall: run <code>spdrop.sql</code> as SYSDBA.</p>
+
+    <h2>Taking Snapshots</h2>
+    <p>All operations go through the <code>STATSPACK</code> package. Create a snapshot with <code>STATSPACK.SNAP</code> (procedure) or as a function (returns snapshot ID). Default level: 5. Valid levels: 0, 5, 6, 7, 10 — higher = more data, more space.</p>
+
+    <p>To use a different level for one snapshot only: pass <code>i_snap_level</code>. To also make it the new permanent default: also pass <code>TRUE</code> to <code>i_modify_parameter</code>. To change the default without creating a snapshot: use <code>STATSPACK.MODIFY_STATSPACK_PARAMETER</code>. Current settings live in <code>STATS$STATSPACK_PARAMETER</code>. Existing snapshots: query <code>STATS$SNAPSHOT</code>.</p>
+
+    <div class="note">
+      <span class="label">Space Consideration</span>
+      Higher snapshot levels consume more storage. Monitor PERFSTAT schema growth rate if running Statspack long-term.
+    </div>
+
+    <h2>Baselines</h2>
+    <p>Create with <code>STATSPACK.MAKE_BASELINE</code> — pass begin/end snapshot IDs, or begin/end dates (it finds the nearest snapshots). The function form returns the count of snapshots marked. Baselines don't create separate objects — they set a flag on snapshot rows, exempting them from purging. To remove a baseline (without deleting data): <code>STATSPACK.CLEAR_BASELINE</code>. Once cleared, snapshots become eligible for normal purging.</p>
+
+    <h2>Generating Reports</h2>
+    <p><strong>Instance reports</strong> (<code>spreport.sql</code>): equivalent of an AWR report — full instance health summary across a snapshot interval. Interactive or batch mode. Prompts for begin/end snapshot IDs and output filename. <strong>SQL reports</strong> (<code>sprepsql.sql</code>): drill into a specific SQL statement by hash value.</p>
+
+    <p>Read Statspack reports top-down, just like AWR — high-level load indicators first to locate the problem area, then related detail sections. Note: Statspack sometimes expresses wait percentages relative to <strong>call time</strong> (DB time + background elapsed time) rather than DB time. In practice, treat call time percentages the same way — relative significance is comparable.</p>
+
+    <h2>Purging</h2>
+    <p>Use <code>STATSPACK.PURGE</code>. Accepts a range of snapshot IDs, begin/end dates, a cutoff date, or a number of days. Baseline-flagged snapshots are immune — clear their baseline first if you want them purged. To flush all Statspack data without reinstalling: run <code>sptrunc.sql</code>. Never manually truncate PERFSTAT tables.</p>
+
+    <h2>Automation</h2>
+    <p>Statspack has no built-in scheduler. Use DBMS_SCHEDULER or the OS task scheduler. At minimum, automate snapshot creation and purging. Baselines can be manual, or automated if preferred. Also automate gathering optimizer statistics on the PERFSTAT schema itself.</p>
+
+    <div class="info">
+      <span class="label">Documentation</span>
+      Detailed Statspack documentation is in <code>$ORACLE_HOME/rdbms/admin/spdoc.txt</code>. Oracle's standard performance tuning guide covers it lightly — the file itself is the authoritative reference.
+    </div>
+  </div>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Database Architecture - 15 MCQ Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .question-card {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .question-card:hover {
+            transform: translateX(5px);
+        }
+        .question-number {
+            background: #667eea;
+            color: white;
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .question-text {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option:hover {
+            background: #f0f2ff;
+            border-color: #667eea;
+        }
+        .option input[type="radio"] {
+            margin-right: 15px;
+            accent-color: #667eea;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .option-text {
+            font-size: 1em;
+            color: #444;
+        }
+        .explanation {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            display: none;
+        }
+        .explanation.show {
+            display: block;
+        }
+        .correct-answer {
+            color: #155724;
+            background: #d4edda;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            border-left: 4px solid #28a745;
+        }
+        .reason-text {
+            color: #333;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .reason-text strong {
+            color: #0056b3;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0 20px;
+        }
+        .btn {
+            padding: 12px 35px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.6);
+        }
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+        .score-card {
+            text-align: center;
+            font-size: 1.3em;
+            padding: 15px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 50px;
+            margin: 20px 0;
+            font-weight: bold;
+            display: none;
+        }
+        .footer {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ Oracle Database Architecture</h1>
+        <div class="subtitle">Test your knowledge with 15 multiple choice questions</div>
+        
+        <div id="questions-container"></div>
+        
+        <div class="button-container">
+            <button class="btn btn-primary" onclick="submitAnswers()">Submit Answers</button>
+            <button class="btn btn-secondary" onclick="resetQuiz()">Reset Quiz</button>
+        </div>
+        
+        <div id="score-card" class="score-card"></div>
+        <div class="footer">Click Submit to see explanations for each answer</div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "Which Oracle memory structure holds the parsed SQL statements, execution plans, and session information?",
+                options: [
+                    "Database Buffer Cache",
+                    "Shared Pool",
+                    "Redo Log Buffer",
+                    "Large Pool"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Shared Pool is correct</strong> because it stores parsed SQL, execution plans (library cache), and dictionary data (row cache). The Database Buffer Cache (option A) holds data blocks, Redo Log Buffer (option C) stores redo entries, and Large Pool (option D) is for large memory allocations like RMAN."
+            },
+            {
+                question: "What is the primary function of the Oracle Database Writer (DBWn) process?",
+                options: [
+                    "Writes redo log entries to disk",
+                    "Writes dirty buffers from database buffer cache to data files",
+                    "Manages archive log operations",
+                    "Cleans up temporary segments"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Option B is correct</strong>. DBWn writes dirty buffers (modified data blocks) from the database buffer cache to data files on disk. LGWR (Log Writer) performs option A, ARCn performs option C, and SMON may handle temporary segments (option D)."
+            },
+            {
+                question: "Which background process is responsible for recovering an instance after a failure?",
+                options: [
+                    "PMON",
+                    "SMON",
+                    "CKPT",
+                    "LGWR"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>SMON (System Monitor) is correct</strong>. It performs instance recovery by applying redo logs and opening the database. PMON (option A) cleans up failed processes, CKPT (option C) updates control files, and LGWR (option D) writes redo logs."
+            },
+            {
+                question: "What is stored in the Oracle Redo Log Buffer?",
+                options: [
+                    "Data blocks modified by transactions",
+                    "SQL statements executed by users",
+                    "A sequential record of all changes made to the database",
+                    "Database parameter values"
+                ],
+                correct: 2,
+                explanation: "✅ <strong>Option C is correct</strong>. The Redo Log Buffer stores a sequential record of all changes made to the database (redo entries) for recovery purposes. Option A is stored in buffer cache, option B in shared pool, and option D in SPFILE/PFILE."
+            },
+            {
+                question: "Which component of the Oracle instance manages user sessions and performs connection management?",
+                options: [
+                    "Database Writer",
+                    "Log Writer",
+                    "System Monitor",
+                    "Process Monitor (PMON)"
+                ],
+                correct: 3,
+                explanation: "✅ <strong>PMON is correct</strong>. Process Monitor (PMON) manages user sessions, performs connection cleanup after failures, and registers database services with listeners. The other processes have different primary functions."
+            },
+            {
+                question: "What is the purpose of an UNDO tablespace in Oracle?",
+                options: [
+                    "Store permanent user data",
+                    "Store temporary data for sorting operations",
+                    "Store before-images of data for read consistency and rollback",
+                    "Store archived redo logs"
+                ],
+                correct: 2,
+                explanation: "✅ <strong>Option C is correct</strong>. UNDO tablespace stores before-images of data to provide read consistency, enable rollback of transactions, and support flashback features. Option A is for permanent tablespaces, B for temporary tablespaces, D for recovery area."
+            },
+            {
+                question: "Which Oracle file stores the physical structure of the database including datafile and redo log locations?",
+                options: [
+                    "Parameter File (PFILE)",
+                    "Control File",
+                    "Password File",
+                    "Alert Log"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Control File is correct</strong>. It contains the database name, datafile locations, redo log details, and checkpoint information. PFILE (option A) contains instance parameters, Password File (option C) stores privileged user credentials, and Alert Log (option D) contains database messages."
+            },
+            {
+                question: "What is the function of the Archiver (ARCn) process?",
+                options: [
+                    "Compresses data files",
+                    "Copies filled redo log files to a designated archive location",
+                    "Manages automatic storage expansion",
+                    "Performs database backups"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Option B is correct</strong>. ARCn copies filled online redo logs to archive destinations when the database is in ARCHIVELOG mode. This enables point-in-time recovery. Other options describe different features."
+            },
+            {
+                question: "Which memory structure in Oracle uses a Least Recently Used (LRU) algorithm to manage data blocks?",
+                options: [
+                    "Shared Pool",
+                    "Large Pool",
+                    "Database Buffer Cache",
+                    "Java Pool"
+                ],
+                correct: 2,
+                explanation: "✅ <strong>Database Buffer Cache is correct</strong>. It uses LRU to manage cached data blocks, keeping frequently accessed blocks in memory. Shared Pool (option A) uses different algorithms for SQL/Library cache management."
+            },
+            {
+                question: "What is the primary purpose of the Checkpoint (CKPT) process?",
+                options: [
+                    "To verify user passwords",
+                    "To signal DBWn to write dirty buffers and update control files/datafile headers",
+                    "To check for damaged blocks",
+                    "To validate database configuration"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Option B is correct</strong>. CKPT updates control files and datafile headers with checkpoint information and signals DBWn to write dirty buffers. It doesn't perform security checks (A), block checking (C), or validation (D)."
+            },
+            {
+                question: "In which memory area are PL/SQL procedures and functions stored and executed?",
+                options: [
+                    "Database Buffer Cache",
+                    "Redo Log Buffer",
+                    "Shared Pool (Library Cache)",
+                    "Streams Pool"
+                ],
+                correct: 2,
+                explanation: "✅ <strong>Shared Pool (Library Cache) is correct</strong>. Compiled PL/SQL units are stored in the Library Cache portion of Shared Pool for execution. Buffer cache (A) stores data, Redo Log Buffer (B) stores changes, Streams Pool (D) is for Oracle Streams."
+            },
+            {
+                question: "What is the role of the Listener in Oracle Net Services?",
+                options: [
+                    "To monitor database performance",
+                    "To receive incoming client connection requests and direct them to the appropriate database instance",
+                    "To encrypt network traffic",
+                    "To manage database users"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Option B is correct</strong>. The Listener process listens for incoming client connection requests and establishes connections to the database instance. It's a network component, not for monitoring (A), encryption (C), or user management (D)."
+            },
+            {
+                question: "Which statement about Oracle's System Global Area (SGA) is TRUE?",
+                options: [
+                    "It is allocated per user session",
+                    "It is shared by all server and background processes",
+                    "It stores only user session data",
+                    "It is written to disk during normal operation"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>Option B is correct</strong>. SGA is a shared memory area that contains data and control information for the Oracle instance, accessible to all server and background processes. PGA (Program Global Area) is per-session (A). SGA is not written to disk (D)."
+            },
+            {
+                question: "What happens during an Oracle instance's 'STARTUP NOMOUNT' phase?",
+                options: [
+                    "The database is opened for users",
+                    "The control files are read",
+                    "The instance is started without mounting the database",
+                    "All datafiles are verified"
+                ],
+                correct: 2,
+                explanation: "✅ <strong>Option C is correct</strong>. NOMOUNT starts the instance (allocates SGA, starts background processes) but doesn't mount the database or open control files. Option A is OPEN phase, B is MOUNT phase, D happens during OPEN or recovery."
+            },
+            {
+                question: "Which process is responsible for writing redo entries from the Log Buffer to online redo log files?",
+                options: [
+                    "DBWn",
+                    "LGWR",
+                    "ARCn",
+                    "CKPT"
+                ],
+                correct: 1,
+                explanation: "✅ <strong>LGWR is correct</strong>. Log Writer (LGWR) writes redo entries from the Redo Log Buffer to online redo log files in a sequential manner. DBWn (A) writes data blocks, ARCn (C) archives logs, CKPT (D) manages checkpoints."
+            }
+        ];
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            let html = '';
+            
+            questions.forEach((q, index) => {
+                html += `
+                    <div class="question-card" id="q-${index}">
+                        <div class="question-number">Question ${index + 1}</div>
+                        <div class="question-text">${q.question}</div>
+                        <div class="options">
+                            ${q.options.map((opt, optIndex) => `
+                                <label class="option">
+                                    <input type="radio" name="q${index}" value="${optIndex}">
+                                    <span class="option-text">${opt}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                        <div id="exp-${index}" class="explanation"></div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function submitAnswers() {
+            let score = 0;
+            let answered = 0;
+            
+            // Hide all explanations first
+            document.querySelectorAll('.explanation').forEach(exp => {
+                exp.classList.remove('show');
+                exp.innerHTML = '';
+            });
+            
+            // Check each question
+            questions.forEach((q, index) => {
+                const selected = document.querySelector(`input[name="q${index}"]:checked`);
+                const explanationDiv = document.getElementById(`exp-${index}`);
+                
+                if (selected) {
+                    answered++;
+                    const selectedValue = parseInt(selected.value);
+                    
+                    if (selectedValue === q.correct) {
+                        score++;
+                    }
+                    
+                    // Determine selected text for display
+                    const selectedText = q.options[selectedValue];
+                    const correctText = q.options[q.correct];
+                    
+                    // Build explanation HTML
+                    let explanationHTML = `
+                        <div class="correct-answer">
+                            ${selectedValue === q.correct ? '✓ Your answer is correct!' : '✗ Your answer is incorrect'}
+                        </div>
+                        <div class="reason-text">
+                            <strong>Your selection:</strong> ${selectedText}<br>
+                            <strong>Correct answer:</strong> ${correctText}<br><br>
+                            ${q.explanation}
+                        </div>
+                    `;
+                    
+                    explanationDiv.innerHTML = explanationHTML;
+                    explanationDiv.classList.add('show');
+                } else {
+                    // Handle unanswered
+                    explanationDiv.innerHTML = `
+                        <div class="correct-answer" style="background: #fff3cd; color: #856404; border-left-color: #ffc107;">
+                            ⚠️ You did not answer this question
+                        </div>
+                        <div class="reason-text">
+                            <strong>Correct answer:</strong> ${q.options[q.correct]}<br><br>
+                            ${q.explanation}
+                        </div>
+                    `;
+                    explanationDiv.classList.add('show');
+                }
+            });
+            
+            // Show score
+            const scoreCard = document.getElementById('score-card');
+            scoreCard.style.display = 'block';
+            scoreCard.innerHTML = `📊 You scored ${score} out of 15 (${Math.round(score/15*100)}%) - ${answered} questions answered`;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetQuiz() {
+            // Clear all radio buttons
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            // Hide all explanations
+            document.querySelectorAll('.explanation').forEach(exp => {
+                exp.classList.remove('show');
+                exp.innerHTML = '';
+            });
+            
+            // Hide score card
+            document.getElementById('score-card').style.display = 'none';
+        }
+
+        // Initialize on page load
+        window.onload = renderQuestions;
+    </script>
+</body>
+</html>
