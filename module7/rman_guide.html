@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMAN Recovery Manager - Comprehensive Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            border-left: 5px solid #667eea;
+            padding-left: 30px;
+        }
+        
+        .section h2 {
+            color: #1e3c72;
+            font-size: 2em;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .section h2::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: #667eea;
+            margin-top: 10px;
+        }
+        
+        .section h3 {
+            color: #2a5298;
+            font-size: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            border-left: 5px solid #00acc1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 5px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        
+        .code-block pre {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        
+        .command {
+            color: #66d9ef;
+            font-weight: bold;
+        }
+        
+        .comment {
+            color: #75715e;
+        }
+        
+        .string {
+            color: #a6e22e;
+        }
+        
+        .keyword {
+            color: #f92672;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .icon-copy {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .icon-recover {
+            background: #ff9800;
+            color: white;
+        }
+        
+        .icon-control {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .icon-flash {
+            background: #9c27b0;
+            color: white;
+        }
+        
+        ul {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin: 10px 0;
+        }
+        
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        
+        footer {
+            background: #1e3c72;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗄️ RMAN Recovery Manager</h1>
+            <p>Complete Guide to Backup, Copy, Recovery & Flashback Operations</p>
+        </header>
+        
+        <div class="content">
+            <!-- RMAN COPY Section -->
+            <div class="section">
+                <h2><span class="icon icon-copy">📋</span>RMAN COPY Operations</h2>
+                
+                <p>RMAN COPY creates image copies of datafiles, control files, and archived redo logs. Unlike backupsets, image copies are identical byte-for-byte copies that can be used directly by the database.</p>
+                
+                <div class="info-box">
+                    <strong>Key Benefits:</strong>
+                    <ul>
+                        <li>Faster recovery than backupsets (no restore needed, just switch)</li>
+                        <li>Can be incrementally updated to reduce recovery time</li>
+                        <li>Usable by OS utilities (cp, dd, etc.)</li>
+                    </ul>
+                </div>
+                
+                <h3>Basic COPY Commands</h3>
+                
+                <div class="code-block">
+<pre><span class="comment"># Copy entire database</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">COPY</span> DATABASE;
+
+<span class="comment"># Copy specific datafile</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">COPY</span> DATAFILE <span class="string">'/u01/oradata/ORCL/users01.dbf'</span> 
+      <span class="keyword">TO</span> <span class="string">'/backup/users01_copy.dbf'</span>;
+
+<span class="comment"># Copy tablespace</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">COPY</span> TABLESPACE users 
+      <span class="keyword">TO</span> <span class="string">'/backup'</span>;
+
+<span class="comment"># Copy current control file</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">COPY</span> CURRENT CONTROLFILE <span class="keyword">TO</span> <span class="string">'/backup/control01.ctl'</span>;
+
+<span class="comment"># Copy with tag for identification</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">COPY</span> DATAFILE 5 <span class="keyword">TO</span> <span class="string">'/backup/df5.dbf'</span> <span class="keyword">TAG</span> <span class="string">'WEEKLY_COPY'</span>;
+</pre>
+                </div>
+                
+                <h3>Incremental Update of Image Copies</h3>
+                <p>This powerful feature keeps image copies current, dramatically reducing recovery time.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Step 1: Create initial image copy</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">BACKUP AS COPY</span> DATABASE;
+
+<span class="comment"># Step 2: Daily - Take incremental backup and apply to image copy</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">BACKUP INCREMENTAL LEVEL 1</span> 
+      <span class="keyword">FOR RECOVER OF COPY WITH TAG</span> <span class="string">'DAILY_INC'</span> 
+      DATABASE;
+
+<span class="comment"># Step 3: Apply incremental to image copy (roll forward)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER COPY OF DATABASE WITH TAG</span> <span class="string">'DAILY_INC'</span>;
+
+<span class="comment"># Combined approach (automatic)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RUN</span> {
+  <span class="keyword">RECOVER COPY OF DATABASE WITH TAG</span> <span class="string">'INC_UPDATE'</span>;
+  <span class="keyword">BACKUP INCREMENTAL LEVEL 1 FOR RECOVER OF COPY WITH TAG</span> <span class="string">'INC_UPDATE'</span>
+  DATABASE;
+}
+</pre>
+                </div>
+                
+                <div class="success-box">
+                    <strong>💡 Best Practice:</strong> Use incremental update strategy for databases requiring minimal downtime. Recovery time is reduced to just the time since last incremental update (typically 24 hours).
+                </div>
+            </div>
+            
+            <!-- Recovery Section -->
+            <div class="section">
+                <h2><span class="icon icon-recover">🔧</span>Database Recovery</h2>
+                
+                <h3>Complete Recovery (No Data Loss)</h3>
+                <p>Restore and recover database to the most recent point in time using all available redo.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Recover entire database (database must be mounted)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">STARTUP MOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN</span>;
+
+<span class="comment"># Recover specific tablespace (database open, tablespace offline)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">SQL</span> <span class="string">'ALTER TABLESPACE users OFFLINE IMMEDIATE'</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE TABLESPACE</span> users;
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER TABLESPACE</span> users;
+<span class="command">RMAN&gt;</span> <span class="keyword">SQL</span> <span class="string">'ALTER TABLESPACE users ONLINE'</span>;
+
+<span class="comment"># Recover specific datafile</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">SQL</span> <span class="string">'ALTER DATABASE DATAFILE 5 OFFLINE'</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATAFILE</span> 5;
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATAFILE</span> 5;
+<span class="command">RMAN&gt;</span> <span class="keyword">SQL</span> <span class="string">'ALTER DATABASE DATAFILE 5 ONLINE'</span>;
+
+<span class="comment"># Validate before actual restore</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATABASE VALIDATE</span>;
+</pre>
+                </div>
+                
+                <h3>Fast Recovery Using Image Copies (SWITCH)</h3>
+                <div class="code-block">
+<pre><span class="comment"># Switch datafile to image copy (instant recovery)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">SWITCH DATAFILE</span> 5 <span class="keyword">TO COPY</span>;
+
+<span class="comment"># Switch entire database to image copies</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">SWITCH DATABASE TO COPY</span>;
+
+<span class="comment"># Then apply redo logs to roll forward</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN</span>;
+</pre>
+                </div>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Important:</strong> SWITCH changes the control file pointer to use the image copy as the new datafile location. This is much faster than RESTORE but requires a valid image copy.
+                </div>
+            </div>
+            
+            <!-- PITR Section -->
+            <div class="section">
+                <h2><span class="icon icon-recover">⏰</span>Point-in-Time Recovery (PITR)</h2>
+                
+                <p>PITR allows you to recover the database to a specific moment in the past, useful for:</p>
+                <ul>
+                    <li>Recovering from logical corruption or user errors</li>
+                    <li>Testing backup and recovery procedures</li>
+                    <li>Recovering dropped tables or incorrect DML operations</li>
+                </ul>
+                
+                <h3>Complete Database PITR</h3>
+                <div class="code-block">
+<pre><span class="comment"># Recover to specific time</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">STARTUP MOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">SET UNTIL TIME</span> <span class="string">"TO_DATE('2024-02-10 15:30:00', 'YYYY-MM-DD HH24:MI:SS')"</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+
+<span class="comment"># Recover to SCN (System Change Number)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RUN</span> {
+  <span class="keyword">SET UNTIL SCN</span> 2894561;
+  <span class="keyword">RESTORE DATABASE</span>;
+  <span class="keyword">RECOVER DATABASE</span>;
+  <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+}
+
+<span class="comment"># Recover to log sequence</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RUN</span> {
+  <span class="keyword">SET UNTIL SEQUENCE</span> 1234 <span class="keyword">THREAD</span> 1;
+  <span class="keyword">RESTORE DATABASE</span>;
+  <span class="keyword">RECOVER DATABASE</span>;
+  <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+}
+</pre>
+                </div>
+                
+                <h3>Tablespace Point-in-Time Recovery (TSPITR)</h3>
+                <p>Recover specific tablespaces to a point in time while keeping rest of database current.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Basic TSPITR</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER TABLESPACE</span> users 
+      <span class="keyword">UNTIL TIME</span> <span class="string">"TO_DATE('2024-02-10 12:00:00', 'YYYY-MM-DD HH24:MI:SS')"</span>
+      <span class="keyword">AUXILIARY DESTINATION</span> <span class="string">'/u01/aux'</span>;
+
+<span class="comment"># TSPITR with specific files excluded from import</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER TABLESPACE</span> users
+      <span class="keyword">UNTIL TIME</span> <span class="string">"SYSDATE-1/24"</span>  <span class="comment">-- 1 hour ago</span>
+      <span class="keyword">AUXILIARY DESTINATION</span> <span class="string">'/backup/aux'</span>
+      <span class="keyword">SKIP TABLESPACE</span> temp, undo;
+</pre>
+                </div>
+                
+                <div class="info-box">
+                    <strong>📝 TSPITR Notes:</strong>
+                    <ul>
+                        <li>Requires auxiliary instance automatically created by RMAN</li>
+                        <li>Objects with cross-tablespace dependencies may be dropped</li>
+                        <li>Use <span class="highlight">DBMS_TTS.TRANSPORT_SET_CHECK</span> to validate before TSPITR</li>
+                    </ul>
+                </div>
+                
+                <h3>Block Media Recovery (BMR)</h3>
+                <p>Recover individual corrupt blocks without taking datafiles offline.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Recover specific corrupt blocks</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATAFILE</span> 5 <span class="keyword">BLOCK</span> 23, 145, 167;
+
+<span class="comment"># Recover all corrupt blocks (RMAN scans for corruption)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER CORRUPTION LIST</span>;
+
+<span class="comment"># Find corrupt blocks first</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">VALIDATE DATAFILE</span> 5;
+<span class="command">RMAN&gt;</span> <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> V$DATABASE_BLOCK_CORRUPTION;
+</pre>
+                </div>
+            </div>
+            
+            <!-- Control Files Section -->
+            <div class="section">
+                <h2><span class="icon icon-control">🎛️</span>Control File Management</h2>
+                
+                <p>Control files contain critical database metadata. Loss of all control files requires special recovery procedures.</p>
+                
+                <h3>Backing Up Control Files</h3>
+                <div class="code-block">
+<pre><span class="comment"># Automatic with every backup (recommended setting)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">CONFIGURE CONTROLFILE AUTOBACKUP ON</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">CONFIGURE CONTROLFILE AUTOBACKUP FORMAT FOR DEVICE TYPE DISK TO</span> 
+      <span class="string">'/backup/%F'</span>;
+
+<span class="comment"># Manual control file backup</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">BACKUP CURRENT CONTROLFILE</span>;
+
+<span class="comment"># Backup control file with tag</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">BACKUP CURRENT CONTROLFILE TAG</span> <span class="string">'BEFORE_UPGRADE'</span>;
+
+<span class="comment"># Create control file copy (image copy)</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">BACKUP AS COPY CURRENT CONTROLFILE TO</span> <span class="string">'/backup/control_copy.ctl'</span>;
+
+<span class="comment"># SQL method for trace file (for manual recreation)</span>
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER DATABASE BACKUP CONTROLFILE TO TRACE AS</span> 
+     <span class="string">'/backup/control.sql'</span>;
+</pre>
+                </div>
+                
+                <h3>Restoring Control Files</h3>
+                <div class="code-block">
+<pre><span class="comment"># Scenario 1: One control file lost (simple OS copy)</span>
+<span class="command">$</span> cp /u01/oradata/ORCL/control01.ctl /u01/oradata/ORCL/control02.ctl
+
+<span class="comment"># Scenario 2: All control files lost - restore from autobackup</span>
+<span class="command">$</span> rman target /
+<span class="command">RMAN&gt;</span> <span class="keyword">STARTUP NOMOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">SET DBID</span> 1234567890;  <span class="comment">-- Your database DBID</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE CONTROLFILE FROM AUTOBACKUP</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE MOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RECOVER DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+
+<span class="comment"># Restore from specific location</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">STARTUP NOMOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE CONTROLFILE FROM</span> <span class="string">'/backup/control_copy.ctl'</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE MOUNT</span>;
+
+<span class="comment"># Find and restore from latest autobackup</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE CONTROLFILE FROM AUTOBACKUP</span>
+      <span class="keyword">MAXSEQ</span> 100 <span class="keyword">MAXDAYS</span> 7;
+</pre>
+                </div>
+                
+                <h3>Recreating Control File Manually</h3>
+                <div class="code-block">
+<pre><span class="comment"># Generate control file creation script</span>
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER DATABASE BACKUP CONTROLFILE TO TRACE AS</span> 
+     <span class="string">'/tmp/recreate_control.sql'</span> <span class="keyword">RESETLOGS</span>;
+
+<span class="comment"># Edit the trace file, then execute</span>
+<span class="command">SQL&gt;</span> <span class="keyword">STARTUP NOMOUNT</span>;
+<span class="command">SQL&gt;</span> @/tmp/recreate_control.sql
+<span class="command">SQL&gt;</span> <span class="keyword">RECOVER DATABASE USING BACKUP CONTROLFILE</span>;
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+</pre>
+                </div>
+                
+                <table>
+                    <tr>
+                        <th>Control File Scenario</th>
+                        <th>Recovery Method</th>
+                        <th>Downtime</th>
+                    </tr>
+                    <tr>
+                        <td>One control file lost (others intact)</td>
+                        <td>OS copy from good file</td>
+                        <td>Minimal (seconds)</td>
+                    </tr>
+                    <tr>
+                        <td>All control files lost (autobackup available)</td>
+                        <td>RMAN RESTORE CONTROLFILE FROM AUTOBACKUP</td>
+                        <td>Minutes</td>
+                    </tr>
+                    <tr>
+                        <td>All control files lost (no autobackup)</td>
+                        <td>Recreate from trace file</td>
+                        <td>Hours (manual process)</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Flashback Section -->
+            <div class="section">
+                <h2><span class="icon icon-flash">⚡</span>Flashback Technologies</h2>
+                
+                <p>Flashback features provide logical recovery options without traditional restore/recover operations.</p>
+                
+                <h3>Flashback Database</h3>
+                <p>Rewinds the entire database to a previous point in time using flashback logs.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Enable Flashback Database</span>
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER DATABASE FLASHBACK ON</span>;
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER SYSTEM SET DB_FLASHBACK_RETENTION_TARGET</span>=4320;  <span class="comment">-- 3 days in minutes</span>
+
+<span class="comment"># Set Fast Recovery Area size</span>
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER SYSTEM SET DB_RECOVERY_FILE_DEST_SIZE</span>=50G;
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER SYSTEM SET DB_RECOVERY_FILE_DEST</span>=<span class="string">'+FRA'</span>;
+
+<span class="comment"># Check flashback status</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> flashback_on, oldest_flashback_scn, oldest_flashback_time 
+     <span class="keyword">FROM</span> v$database;
+
+<span class="comment"># Flashback database to timestamp</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">SHUTDOWN IMMEDIATE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">STARTUP MOUNT</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">FLASHBACK DATABASE TO TIME</span> 
+      <span class="string">"TO_DATE('2024-02-10 14:00:00', 'YYYY-MM-DD HH24:MI:SS')"</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+
+<span class="comment"># Flashback to SCN</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">FLASHBACK DATABASE TO SCN</span> 2894000;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+
+<span class="comment"># Flashback to restore point</span>
+<span class="command">SQL&gt;</span> <span class="keyword">CREATE RESTORE POINT</span> before_upgrade <span class="keyword">GUARANTEE FLASHBACK DATABASE</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">FLASHBACK DATABASE TO RESTORE POINT</span> before_upgrade;
+<span class="command">RMAN&gt;</span> <span class="keyword">ALTER DATABASE OPEN RESETLOGS</span>;
+</pre>
+                </div>
+                
+                <div class="success-box">
+                    <strong>✅ Flashback Database Benefits:</strong>
+                    <ul>
+                        <li>Much faster than restore/recover (minutes vs hours)</li>
+                        <li>Can flashback past OPEN RESETLOGS (12c+)</li>
+                        <li>Great for testing upgrades, patches, or major changes</li>
+                    </ul>
+                </div>
+                
+                <h3>Flashback Table</h3>
+                <p>Rewind individual tables to a previous state without affecting other objects.</p>
+                
+                <div class="code-block">
+<pre><span class="comment"># Enable row movement (required for flashback table)</span>
+<span class="command">SQL&gt;</span> <span class="keyword">ALTER TABLE</span> employees <span class="keyword">ENABLE ROW MOVEMENT</span>;
+
+<span class="comment"># Flashback table to timestamp</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TABLE</span> employees 
+     <span class="keyword">TO TIMESTAMP</span> (SYSTIMESTAMP - <span class="keyword">INTERVAL</span> <span class="string">'15'</span> <span class="keyword">MINUTE</span>);
+
+<span class="comment"># Flashback to SCN</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TABLE</span> employees <span class="keyword">TO SCN</span> 2894000;
+
+<span class="comment"># Flashback to before specific operation</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TABLE</span> employees 
+     <span class="keyword">TO BEFORE DROP</span>;  <span class="comment">-- Recover dropped table</span>
+
+<span class="comment"># Rename table during flashback recovery</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TABLE</span> employees 
+     <span class="keyword">TO BEFORE DROP RENAME TO</span> employees_recovered;
+</pre>
+                </div>
+                
+                <h3>Flashback Query</h3>
+                <div class="code-block">
+<pre><span class="comment"># Query data as it existed at a specific time</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> employees 
+     <span class="keyword">AS OF TIMESTAMP</span> (SYSTIMESTAMP - <span class="keyword">INTERVAL</span> <span class="string">'2'</span> <span class="keyword">HOUR</span>)
+     <span class="keyword">WHERE</span> department_id = 50;
+
+<span class="comment"># Compare current and past data</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> e1.employee_id, e1.salary current_salary, e2.salary old_salary
+     <span class="keyword">FROM</span> employees e1,
+          employees <span class="keyword">AS OF TIMESTAMP</span> (SYSTIMESTAMP - <span class="keyword">INTERVAL</span> <span class="string">'7'</span> <span class="keyword">DAY</span>) e2
+     <span class="keyword">WHERE</span> e1.employee_id = e2.employee_id
+       <span class="keyword">AND</span> e1.salary != e2.salary;
+
+<span class="comment"># Recover deleted rows</span>
+<span class="command">SQL&gt;</span> <span class="keyword">INSERT INTO</span> employees
+     <span class="keyword">SELECT</span> * <span class="keyword">FROM</span> employees
+     <span class="keyword">AS OF TIMESTAMP</span> (SYSTIMESTAMP - <span class="keyword">INTERVAL</span> <span class="string">'1'</span> <span class="keyword">HOUR</span>)
+     <span class="keyword">WHERE</span> employee_id = 12345;
+</pre>
+                </div>
+                
+                <h3>Flashback Transaction</h3>
+                <div class="code-block">
+<pre><span class="comment"># Find transaction ID from flashback query</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> versions_xid, versions_operation, salary
+     <span class="keyword">FROM</span> employees 
+     <span class="keyword">VERSIONS BETWEEN TIMESTAMP</span> 
+          (SYSTIMESTAMP - <span class="keyword">INTERVAL</span> <span class="string">'2'</span> <span class="keyword">HOUR</span>) <span class="keyword">AND</span> SYSTIMESTAMP
+     <span class="keyword">WHERE</span> employee_id = 100;
+
+<span class="comment"># Flashback (undo) specific transaction</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TRANSACTION</span> <span class="string">'0A00150023000000'</span>;
+
+<span class="comment"># Flashback with dependencies</span>
+<span class="command">SQL&gt;</span> <span class="keyword">FLASHBACK TRANSACTION</span> <span class="string">'0A00150023000000'</span> 
+     <span class="keyword">CASCADE</span>;  <span class="comment">-- Also backs out dependent transactions</span>
+</pre>
+                </div>
+                
+                <table>
+                    <tr>
+                        <th>Flashback Feature</th>
+                        <th>Use Case</th>
+                        <th>Requirements</th>
+                    </tr>
+                    <tr>
+                        <td>Flashback Database</td>
+                        <td>Rewind entire database quickly</td>
+                        <td>Flashback logs, FRA</td>
+                    </tr>
+                    <tr>
+                        <td>Flashback Table</td>
+                        <td>Undo changes to specific table</td>
+                        <td>Row movement enabled, undo retention</td>
+                    </tr>
+                    <tr>
+                        <td>Flashback Query</td>
+                        <td>View historical data, compare changes</td>
+                        <td>Undo retention</td>
+                    </tr>
+                    <tr>
+                        <td>Flashback Drop</td>
+                        <td>Recover dropped tables</td>
+                        <td>Recycle bin enabled</td>
+                    </tr>
+                    <tr>
+                        <td>Flashback Transaction</td>
+                        <td>Undo specific DML operations</td>
+                        <td>Supplemental logging</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Best Practices Section -->
+            <div class="section">
+                <h2>🎯 Best Practices & Tips</h2>
+                
+                <div class="info-box">
+                    <h3>Backup Strategy</h3>
+                    <ul>
+                        <li>Use <span class="highlight">incremental updated image copies</span> for critical databases requiring minimal downtime</li>
+                        <li>Enable <span class="highlight">control file autobackup</span> for all databases</li>
+                        <li>Configure <span class="highlight">retention policy</span> based on business requirements</li>
+                        <li>Test restore and recovery procedures regularly</li>
+                        <li>Document your DBID and store it securely</li>
+                    </ul>
+                </div>
+                
+                <div class="warning-box">
+                    <h3>Common Pitfalls</h3>
+                    <ul>
+                        <li>❌ Forgetting to back up control files separately</li>
+                        <li>❌ Not testing PITR procedures before emergencies</li>
+                        <li>❌ Insufficient Fast Recovery Area size for flashback logs</li>
+                        <li>❌ Not documenting SCN or timestamps before major changes</li>
+                        <li>❌ Ignoring VALIDATE checks before actual restores</li>
+                    </ul>
+                </div>
+                
+                <div class="success-box">
+                    <h3>Quick Reference Commands</h3>
+                    <div class="code-block">
+<pre><span class="comment"># Check backup status</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">LIST BACKUP SUMMARY</span>;
+<span class="command">RMAN&gt;</span> <span class="keyword">LIST COPY</span>;
+
+<span class="comment"># Verify backups are usable</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">RESTORE DATABASE VALIDATE</span>;
+
+<span class="comment"># Find database ID (critical for recovery)</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> dbid <span class="keyword">FROM</span> v$database;
+
+<span class="comment"># Check current SCN</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> current_scn <span class="keyword">FROM</span> v$database;
+
+<span class="comment"># View archived logs</span>
+<span class="command">RMAN&gt;</span> <span class="keyword">LIST ARCHIVELOG ALL</span>;
+
+<span class="comment"># Check flashback capability</span>
+<span class="command">SQL&gt;</span> <span class="keyword">SELECT</span> oldest_flashback_time, retention_target 
+     <span class="keyword">FROM</span> v$flashback_database_log;
+</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>🗄️ RMAN Recovery Manager Guide | Oracle Database Backup & Recovery</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">Always test recovery procedures in non-production environments first!</p>
+        </footer>
+    </div>
+</body>
+</html>
