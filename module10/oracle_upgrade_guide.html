@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Database Upgrade Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1e;
+    --surface: #131929;
+    --card: #1b2640;
+    --border: #273552;
+    --accent: #f97316;
+    --accent2: #38bdf8;
+    --success: #22c55e;
+    --warning: #fbbf24;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #7a8aaa;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #1b2640, #0f1a30);
+    border-bottom: 2px solid var(--border);
+    padding: 48px 60px 36px;
+  }
+
+  .page-header .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .page-header h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+
+  .page-header h1 span { color: var(--accent); }
+
+  .page-header p {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 640px;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .section-tag.blue  { background: var(--accent2); color: #0b0f1e; }
+  .section-tag.green { background: var(--success);  color: #0b0f1e; }
+  .section-tag.gold  { background: var(--warning);  color: #0b0f1e; }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 720px) {
+    .two-col { grid-template-columns: 1fr; }
+    .container { padding: 28px 20px 60px; }
+    .page-header { padding: 32px 20px 24px; }
+    .mode-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+  }
+
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--accent2);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); flex-shrink: 0; }
+  .dot.orange { background: var(--accent); }
+  .dot.green  { background: var(--success); }
+  .dot.gold   { background: var(--warning); }
+
+  .checklist { display: flex; flex-direction: column; gap: 7px; }
+
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    user-select: none;
+  }
+
+  .check-item:hover { background: rgba(255,255,255,0.04); }
+  .check-item.checked { color: var(--muted); text-decoration: line-through; }
+
+  .check-box {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+
+  .check-item.checked .check-box { background: var(--success); border-color: var(--success); color: #fff; }
+
+  .step-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .step-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid var(--border);
+    border-radius: 0 6px 6px 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--border);
+    color: var(--muted);
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .callout {
+    display: flex;
+    gap: 12px;
+    padding: 13px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    border: 1px solid;
+  }
+
+  .callout.info    { background: rgba(56,189,248,0.07);  border-color: rgba(56,189,248,0.25);  color: #93c5fd; }
+  .callout.warn    { background: rgba(251,191,36,0.07);  border-color: rgba(251,191,36,0.25);  color: #fde68a; }
+  .callout.success { background: rgba(34,197,94,0.07);   border-color: rgba(34,197,94,0.25);   color: #86efac; }
+  .callout-icon { font-size: 17px; flex-shrink: 0; }
+
+  .code-block {
+    background: #070c18;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    color: #94a3b8;
+    overflow-x: auto;
+  }
+
+  .kw  { color: var(--accent2); }
+  .val { color: #a5f3a0; }
+  .cm  { color: #475569; }
+
+  .mode-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .mode-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--card);
+    transition: all 0.2s;
+  }
+
+  .mode-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .mode-card.selected { border-color: var(--accent); background: rgba(249,115,22,0.08); }
+
+  .mode-icon { font-size: 26px; margin-bottom: 8px; }
+  .mode-name { font-size: 13px; font-weight: 700; font-family: var(--mono); margin-bottom: 6px; }
+  .mode-desc { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+  .mode-detail {
+    background: rgba(249,115,22,0.05);
+    border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .mode-detail.show { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tool-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    margin-bottom: 10px;
+    align-items: flex-start;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .tool-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    display: inline-block;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .badge.new   { background: rgba(34,197,94,0.15);  color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+  .badge.tool  { background: rgba(56,189,248,0.15); color: var(--accent2); border: 1px solid rgba(56,189,248,0.3); }
+  .badge.warn  { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
+  .badge.avoid { background: rgba(239,68,68,0.15);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.3); }
+
+  .cmd-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cmd-table th { text-align: left; padding: 9px 12px; background: rgba(255,255,255,0.04); color: var(--muted); font-weight: 600; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .cmd-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); line-height: 1.5; }
+  .cmd-table tr:last-child td { border-bottom: none; }
+  .cmd { font-family: var(--mono); color: var(--accent2); font-size: 12px; }
+
+  code { font-family: var(--mono); color: var(--accent2); font-size: 0.88em; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="eyebrow">Oracle DBA Training Series</div>
+  <h1>Oracle Database <span>Upgrade Guide</span></h1>
+  <p>A complete reference covering upgrade methods, the AutoUpgrade utility, pre/post-upgrade actions, and Grid Infrastructure upgrades.</p>
+</div>
+
+<div class="container">
+
+  <!-- 1. UPGRADE METHODS -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Module 1</div>
+      <div class="section-title">Upgrade Methods</div>
+    </div>
+    <div class="two-col" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>Direct Upgrade</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div>Install new Oracle release in a <strong>separate home</strong> on the same machine</div>
+          <div class="step-item"><div class="step-num">2</div>Use an upgrade tool to update <strong>data dictionary objects</strong></div>
+          <div class="step-item"><div class="step-num">3</div>Database container re-linked to the <strong>new home</strong></div>
+          <div class="step-item"><div class="step-num">4</div>Old home link <strong>no longer exists</strong> post-upgrade</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot"></div>Data Migration</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div>Install new Oracle release (same or different machine)</div>
+          <div class="step-item"><div class="step-num">2</div>Create a <strong>brand new database</strong> from the new home</div>
+          <div class="step-item"><div class="step-num">3</div>Move schemas using <strong>Data Pump</strong> or similar tools</div>
+          <div class="step-item"><div class="step-num">4</div>Application connects to the <strong>new database</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-bottom:10px">
+      <div class="callout-icon">⚠️</div>
+      <div>Data Migration is <strong>not technically an upgrade</strong>. This guide focuses on the <strong>Direct Upgrade</strong> method. Supported source releases: <strong>11.2.0.4+</strong> for 19c target; <strong>20cR2+</strong> for 21c target.</div>
+    </div>
+    <div class="callout info">
+      <div class="callout-icon">💡</div>
+      <div>Upgrading from <strong>12cR1 → 21c</strong>? You must first upgrade to <strong>19c</strong>, then to <strong>21c</strong>. Multi-hop upgrades are required for unsupported source versions.</div>
+    </div>
+  </section>
+
+  <!-- 2. UPGRADE ROADMAP -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag blue">Module 1</div>
+      <div class="section-title">Upgrade Roadmap</div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>6-Phase Process</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div>📋 <strong>Prepare</strong> for the upgrade</div>
+          <div class="step-item"><div class="step-num">2</div>🧪 <strong>Test</strong> the upgrade process (DBA-led)</div>
+          <div class="step-item"><div class="step-num">3</div>✅ <strong>Test</strong> the upgraded database (QA team-led)</div>
+          <div class="step-item"><div class="step-num">4</div>🔒 <strong>Preserve</strong> the production database — freeze changes</div>
+          <div class="step-item"><div class="step-num">5</div>🚀 <strong>Upgrade</strong> the production database</div>
+          <div class="step-item"><div class="step-num">6</div>⚙️ <strong>Tune</strong> the upgraded database</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot green"></div>Key Reference Documents</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">📘</div>Database Upgrade Guide — use the <em>target release</em> version</div>
+          <div class="step-item"><div class="step-num">📄</div><strong>Doc 2118136.2</strong> — patches for source/target DB</div>
+          <div class="step-item"><div class="step-num">📄</div><strong>Doc 207303.1</strong> — client/server compatibility matrix</div>
+          <div class="step-item"><div class="step-num">📄</div><strong>Doc 742060.1</strong> — release end-of-support dates</div>
+          <div class="step-item"><div class="step-num">📰</div>Mike Dietrich's blog — latest upgrade &amp; patching news</div>
+        </div>
+      </div>
+    </div>
+    <div class="callout warn" style="margin-top:14px">
+      <div class="callout-icon">⚠️</div>
+      <div>Skipping any roadmap phase — especially testing — carries real risk. Production failures are common when testing is bypassed.</div>
+    </div>
+  </section>
+
+  <!-- 3. PRE-UPGRADE CHECKLIST -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag">Module 2</div>
+      <div class="section-title">Pre-Upgrade Checklist &nbsp;<span style="font-size:13px;color:var(--muted);font-weight:400;">— click items to mark done</span></div>
+    </div>
+    <div class="two-col" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>System &amp; Software</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify OS version meets new release requirements</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Check memory and disk space requirements</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify oracle user is in the <code>oper</code> group</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify <code>REMOTE_LOGIN_PASSWORDFILE</code> ≠ SHARED</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Create / migrate the database password file</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify client/server compatibility (Doc 207303.1)</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot green"></div>Database Preparation</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Take a full backup of the database</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Empty the recycle bin in all containers</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Gather statistics on data dictionary &amp; fixed tables</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Install new Oracle Home (follow naming convention)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Copy network config files to new TNS_ADMIN location</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Stop old listener; create new listener from new home</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Notify application users of expected downtime</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot gold"></div>AutoUpgrade Preparation</div>
+      <div class="checklist" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;">
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Download latest <code>autoupgrade.jar</code> — MOS Doc 2485457.1</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Copy jar to new Oracle Home directory</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Create a log directory for AutoUpgrade output</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Create the AutoUpgrade configuration file</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Run AutoUpgrade in <strong>Analyze</strong> mode; review HTML report</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Implement recommended fixes from the Analyze report</span></div>
+        <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Re-run Analyze to confirm database is ready</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. UPGRADE TOOLS -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag blue">Module 3</div>
+      <div class="section-title">Oracle Upgrade Tools</div>
+    </div>
+    <div class="tool-item">
+      <div class="tool-icon">🌟</div>
+      <div><strong>AutoUpgrade</strong> <span class="badge new">19c+</span> <span class="badge new">RECOMMENDED</span><br>
+      <span style="color:var(--muted);font-size:13px">The primary recommended tool. Detects issues, provides fixup scripts, supports multiple simultaneous upgrades, handles Standalone / ASM / RAC, supports non-CDB → PDB conversion. Single jar file, updated via MOS.</span></div>
+    </div>
+    <div class="tool-item">
+      <div class="tool-icon">⚡</div>
+      <div><strong>Parallel Upgrade Utility</strong> <span class="badge tool">12c+</span><br>
+      <span style="color:var(--muted);font-size:13px">Also known as <code>catctl.pl</code> / <code>dbupgrade</code>. Reduces upgrade time by loading the dictionary in parallel using multiple SQL processes.</span></div>
+    </div>
+    <div class="tool-item">
+      <div class="tool-icon">🚢</div>
+      <div><strong>Fleet Patching &amp; Provisioning (FPP)</strong> <span class="badge tool">TOOL</span><br>
+      <span style="color:var(--muted);font-size:13px">Previously "Rapid Home Provisioning". Software lifecycle management for patching and upgrading thousands of databases in parallel across a fleet.</span></div>
+    </div>
+    <div class="tool-item">
+      <div class="tool-icon">🖥️</div>
+      <div><strong>Fleet Maintenance (OEM Plugin)</strong> <span class="badge warn">LICENSE REQUIRED</span><br>
+      <span style="color:var(--muted);font-size:13px">Oracle Enterprise Manager plugin. Requires <em>Database Lifecycle Management Pack</em> license. GUI-based group patching and upgrading.</span></div>
+    </div>
+    <div class="tool-item">
+      <div class="tool-icon">🪦</div>
+      <div><strong>DBUA (Database Upgrade Assistant)</strong> <span class="badge avoid">AVOID</span><br>
+      <span style="color:var(--muted);font-size:13px">GUI-based, still supported in 19c but <strong>not recommended</strong>. Designed for Oracle 11gR2 and earlier. AutoUpgrade supersedes it entirely.</span></div>
+    </div>
+  </section>
+
+  <!-- 5. AUTOUPGRADE MODES -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag blue">Module 3</div>
+      <div class="section-title">AutoUpgrade — Processing Modes &nbsp;<span style="font-size:13px;color:var(--muted);font-weight:400;">— click a mode to expand</span></div>
+    </div>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="selectMode(this,'analyze-detail')">
+        <div class="mode-icon">🔍</div>
+        <div class="mode-name">ANALYZE</div>
+        <div class="mode-desc">Checks DB for issues. Generates report. No changes made.</div>
+      </div>
+      <div class="mode-card" onclick="selectMode(this,'fixup-detail')">
+        <div class="mode-icon">🔧</div>
+        <div class="mode-name">FIXUP</div>
+        <div class="mode-desc">Examines DB and applies some or all recommended fixes.</div>
+      </div>
+      <div class="mode-card" onclick="selectMode(this,'deploy-detail')">
+        <div class="mode-icon">🚀</div>
+        <div class="mode-name">DEPLOY</div>
+        <div class="mode-desc">Full upgrade procedure — all stages end to end.</div>
+      </div>
+      <div class="mode-card" onclick="selectMode(this,'upgrade-detail')">
+        <div class="mode-icon">⬆️</div>
+        <div class="mode-name">UPGRADE</div>
+        <div class="mode-desc">Upgrade + post-fixups on a DB already in the new home.</div>
+      </div>
+    </div>
+    <div id="analyze-detail" class="mode-detail">
+      <strong style="color:var(--accent)">ANALYZE</strong> — Run this first. Scans the source database for compatibility issues and generates an HTML report (errors, warnings, recommendations). Creates fixup scripts but <em>does not execute them</em>.
+      <div class="code-block" style="margin-top:12px">
+        <span class="cm"># Run from the NEW Oracle Home</span><br>
+        <span class="kw">$NEW_ORACLE_HOME</span>/jdk/bin/java -jar autoupgrade.jar <span class="cm">\</span><br>
+        &nbsp;&nbsp;-config <span class="val">upgrade.cfg</span> -mode <span class="val">analyze</span>
+      </div>
+    </div>
+    <div id="fixup-detail" class="mode-detail">
+      <strong style="color:var(--accent)">FIXUP</strong> — Similar to Analyze, but also <em>executes</em> the fixup scripts. Most useful when upgrading multiple similar databases — verify scripts on one, then apply to the rest automatically.
+      <div class="code-block" style="margin-top:12px">
+        <span class="kw">$NEW_ORACLE_HOME</span>/jdk/bin/java -jar autoupgrade.jar <span class="cm">\</span><br>
+        &nbsp;&nbsp;-config <span class="val">upgrade.cfg</span> -mode <span class="val">fixup</span>
+      </div>
+    </div>
+    <div id="deploy-detail" class="mode-detail">
+      <strong style="color:var(--accent)">DEPLOY</strong> — Complete upgrade procedure. Runs <em>all</em> AutoUpgrade stages (Analyze stages are re-executed). The database must be shut down and applications disconnected before starting.
+      <div class="code-block" style="margin-top:12px">
+        <span class="kw">$NEW_ORACLE_HOME</span>/jdk/bin/java -jar autoupgrade.jar <span class="cm">\</span><br>
+        &nbsp;&nbsp;-config <span class="val">upgrade.cfg</span> -mode <span class="val">deploy</span>
+      </div>
+    </div>
+    <div id="upgrade-detail" class="mode-detail">
+      <strong style="color:var(--accent)">UPGRADE</strong> — Runs upgrade + post-fixups on a database already moved to a new Oracle Home (e.g., after cross-system migration). Useful when database files were manually relocated to a different server.
+      <div class="code-block" style="margin-top:12px">
+        <span class="kw">$NEW_ORACLE_HOME</span>/jdk/bin/java -jar autoupgrade.jar <span class="cm">\</span><br>
+        &nbsp;&nbsp;-config <span class="val">upgrade.cfg</span> -mode <span class="val">upgrade</span>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:14px">
+      <div class="callout-icon">💡</div>
+      <div>Typical workflow: <strong>ANALYZE</strong> → review report → fix issues → <strong>DEPLOY</strong>. Use <strong>FIXUP</strong> as an optional automated-fix step when upgrading similar database fleets.</div>
+    </div>
+  </section>
+
+  <!-- 6. CONFIG FILE -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag blue">Module 3</div>
+      <div class="section-title">AutoUpgrade — Configuration File</div>
+    </div>
+    <div class="two-col" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>Parameter Types</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">G</div><strong>Global</strong> — apply to all upgrade jobs.<br><code>global.&lt;param&gt; = &lt;value&gt;</code></div>
+          <div class="step-item"><div class="step-num">L</div><strong>Local</strong> — apply to a specific upgrade job.<br><code>&lt;config_name&gt;.&lt;param&gt; = &lt;value&gt;</code></div>
+          <div class="step-item"><div class="step-num">!</div>Local parameters <strong>override</strong> global ones for that job</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot green"></div>Minimum Required Parameters</div>
+        <div class="step-list">
+          <div class="step-item"><div class="step-num">1</div><code>global.autoupg_log_dir</code> — log files directory</div>
+          <div class="step-item"><div class="step-num">2</div><code>[job].source_home</code> — source Oracle Home path</div>
+          <div class="step-item"><div class="step-num">3</div><code>[job].target_home</code> — target Oracle Home path</div>
+          <div class="step-item"><div class="step-num">4</div><code>[job].sid</code> — database instance name</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><div class="dot gold"></div>Example — Complete Minimal Config</div>
+      <div class="code-block">
+        <span class="cm"># Global parameter</span><br>
+        <span class="kw">global</span>.autoupg_log_dir=<span class="val">/u01/autoupg_logs</span><br><br>
+        <span class="cm"># Local parameters for job "19c21c"</span><br>
+        <span class="kw">19c21c</span>.source_home=<span class="val">/u01/app/oracle/product/19.0.0/dbhome_1</span><br>
+        <span class="kw">19c21c</span>.target_home=<span class="val">/u01/app/oracle/product/21.0.0/dbhome_1</span><br>
+        <span class="kw">19c21c</span>.sid=<span class="val">CDB1</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. CONSOLE MONITORING -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag blue">Module 3</div>
+      <div class="section-title">AutoUpgrade — Console Monitoring</div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>Console Commands</div>
+        <table class="cmd-table">
+          <tr><th>Command</th><th>Description</th></tr>
+          <tr><td><span class="cmd">lsj</span></td><td>List all upgrade jobs and their status</td></tr>
+          <tr><td><span class="cmd">tasks</span></td><td>Display currently running tasks</td></tr>
+          <tr><td><span class="cmd">status [id]</span></td><td>Print status + progress % of a job</td></tr>
+          <tr><td><span class="cmd">logs</span></td><td>Display all log file locations</td></tr>
+          <tr><td><span class="cmd">abort [id]</span></td><td>Abort an upgrade job</td></tr>
+          <tr><td><span class="cmd">clear</span></td><td>Clear the terminal display</td></tr>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="card">
+          <div class="card-title"><div class="dot"></div>Operation Messages</div>
+          <div class="step-list">
+            <div class="step-item"><div class="step-num">⏳</div><strong>PREPARING</strong> — AutoUpgrade instance being initiated. Info only, no action needed.</div>
+            <div class="step-item"><div class="step-num">▶️</div><strong>EXECUTING</strong> — Main stage workflow in progress. Info only, no action needed.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><div class="dot green"></div>State Messages</div>
+          <div class="step-list">
+            <div class="step-item"><div class="step-num" style="background:var(--success);color:#fff">✓</div><strong>FINISHED</strong> — Stage completed successfully</div>
+            <div class="step-item"><div class="step-num" style="background:#1a4fd6;color:#fff">▶</div><strong>RUNNING</strong> — Stage workflow in progress</div>
+            <div class="step-item"><div class="step-num" style="background:var(--danger);color:#fff">!</div><strong>ERROR</strong> — Error encountered. Review the cause.</div>
+            <div class="step-item"><div class="step-num" style="background:var(--muted);color:#fff">✗</div><strong>ABORTED</strong> — Stopped by user request</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. POST-UPGRADE CHECKLIST -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag green">Module 4</div>
+      <div class="section-title">Post-Upgrade Checklist &nbsp;<span style="font-size:13px;color:var(--muted);font-weight:400;">— click items to mark done</span></div>
+    </div>
+    <div class="two-col" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>Immediate Actions</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Drop the Guaranteed Restore Point (GRP) from AutoUpgrade</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Update <code>ORACLE_HOME</code> in <code>.bash_profile</code> to new home</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Source bash_profile; verify <code>sqlplus</code> runs from new home</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify database is open for READ WRITE</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify all DB services registered in the new listener</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Test application connectivity through listener (tnsnames)</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot green"></div>Validation &amp; Cleanup</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Compile invalid PL/SQL objects (use <code>catcon.pl</code> if many)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Run <code>opatch lsinventory</code> from new home — must succeed</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Upgrade tables dependent on Oracle maintained types (12cR2+)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Update <code>COMPATIBLE</code> parameter after stability confirmed</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Restart the instance to apply <code>COMPATIBLE</code> change</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Deinstall old Oracle Home (after a few days, if no rollback needed)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="border-color:rgba(251,191,36,0.3);margin-bottom:14px">
+      <div class="card-title"><div class="dot gold"></div>COMPATIBLE Parameter — Best Practice</div>
+      <div class="step-list">
+        <div class="step-item"><div class="step-num">1</div>After upgrade, <code>COMPATIBLE</code> still reflects the <strong>old release number</strong> — intentional</div>
+        <div class="step-item"><div class="step-num">2</div>New release features remain <strong>disabled</strong> until the parameter is updated</div>
+        <div class="step-item"><div class="step-num">3</div>Allow users to work for <strong>a few days</strong> — confirm stability first</div>
+        <div class="step-item"><div class="step-num">4</div>Update <code>COMPATIBLE</code> to new version number, then <strong>restart the instance</strong></div>
+        <div class="step-item"><div class="step-num">5</div>If an app needs a new feature immediately, updating right away is acceptable</div>
+      </div>
+    </div>
+    <div class="callout info">
+      <div class="callout-icon">💡</div>
+      <div>In production: also take a <strong>full backup</strong> post-upgrade and apply the most recent <strong>Release Update (RU)</strong> patch to the new Oracle Home.</div>
+    </div>
+  </section>
+
+  <!-- 9. GRID INFRASTRUCTURE -->
+  <section>
+    <div class="section-header">
+      <div class="section-tag gold">Module 5</div>
+      <div class="section-title">Grid Infrastructure Upgrade</div>
+    </div>
+    <div class="callout warn" style="margin-bottom:16px">
+      <div class="callout-icon">⚠️</div>
+      <div><strong>AutoUpgrade does NOT upgrade Grid Infrastructure.</strong> When Oracle DB runs with GI (Oracle Restart, RAC, RAC One Node), upgrade <strong>GI first</strong> using the Oracle Universal Installer, then upgrade the database with AutoUpgrade.</div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><div class="dot orange"></div>GI Upgrade Steps</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Download GI 21c software (Linux x86-64)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Take a VM snapshot before starting</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Create new grid home directory (as <code>grid</code> user)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Extract installation zip into new grid home</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Run <code>runcluvfy</code> (CVU) to verify prerequisites</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Shut down the database (not other grid resources)</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Unset grid environment variables</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Run installer → select "Upgrade Oracle Grid Infrastructure"</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Provide root password and complete installation</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><div class="dot green"></div>GI Post-Upgrade Actions</div>
+        <div class="checklist">
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify Clusterware resources are online</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Update <code>ORACLE_HOME</code> in <code>.bash_profile</code> for grid user</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Source bash_profile and verify variables are correct</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Detach old GI home from Oracle inventory</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Verify old home is marked as REMOVED</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Upgrade <code>COMPATIBLE</code> attribute of disk groups</span></div>
+          <div class="check-item" onclick="toggleCheck(this)"><div class="check-box"></div><span>Start the database and confirm normal operation</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="callout info" style="margin-top:14px">
+      <div class="callout-icon">💡</div>
+      <div>The database will technically run on the old home after GI upgrade. However, <strong>Oracle recommends matching release and patch levels</strong> for both GI and the database. Proceed to upgrade the DB with AutoUpgrade afterward.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+    el.querySelector('.check-box').textContent = el.classList.contains('checked') ? '✓' : '';
+  }
+
+  function selectMode(card, detailId) {
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.mode-detail').forEach(d => d.classList.remove('show'));
+    card.classList.add('selected');
+    document.getElementById(detailId).classList.add('show');
+  }
+</script>
+</body>
+</html>

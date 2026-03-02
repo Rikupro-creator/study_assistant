@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Database Backup & Recovery with RMAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #F80000;
+            --primary-dark: #C70000;
+            --secondary: #0066CC;
+            --accent: #00A86B;
+            --bg-dark: #0A0E27;
+            --bg-mid: #141B3D;
+            --bg-light: #1E2749;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B8C5D6;
+            --text-muted: #7B8AA2;
+            --border: rgba(255, 255, 255, 0.1);
+            --success: #00D084;
+            --warning: #FFB020;
+            --danger: #FF3B30;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--bg-mid) 0%, var(--bg-dark) 100%);
+            border-bottom: 2px solid var(--primary);
+            padding: 3rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, transparent 48%, rgba(248, 0, 0, 0.03) 49%, rgba(248, 0, 0, 0.03) 51%, transparent 52%),
+                linear-gradient(-45deg, transparent 48%, rgba(248, 0, 0, 0.03) 49%, rgba(248, 0, 0, 0.03) 51%, transparent 52%);
+            background-size: 40px 40px;
+            opacity: 0.5;
+            z-index: 0;
+        }
+
+        header .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #FF4040 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            font-weight: 300;
+        }
+
+        /* Navigation */
+        nav {
+            background: var(--bg-mid);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .nav-item {
+            background: var(--bg-light);
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .nav-item:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(248, 0, 0, 0.3);
+        }
+
+        /* Main Content */
+        main {
+            padding: 3rem 0;
+        }
+
+        section {
+            margin-bottom: 4rem;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 700;
+        }
+
+        h2::before {
+            content: '';
+            width: 6px;
+            height: 2.5rem;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.75rem;
+            margin: 2rem 0 1rem;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.25rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 24px rgba(248, 0, 0, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .card h4 {
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .card li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .card li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        /* Code blocks */
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        pre code {
+            background: none;
+            border: none;
+            padding: 0;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2rem 0;
+            background: var(--bg-light);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-mid);
+            color: var(--primary);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(248, 0, 0, 0.05);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        .badge-success {
+            background: rgba(0, 208, 132, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(255, 176, 32, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(255, 59, 48, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(0, 102, 204, 0.2);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+
+        /* Alert boxes */
+        .alert {
+            padding: 1.25rem 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+            background: var(--bg-light);
+        }
+
+        .alert-info {
+            border-left-color: var(--secondary);
+            background: rgba(0, 102, 204, 0.1);
+        }
+
+        .alert-success {
+            border-left-color: var(--success);
+            background: rgba(0, 208, 132, 0.1);
+        }
+
+        .alert-warning {
+            border-left-color: var(--warning);
+            background: rgba(255, 176, 32, 0.1);
+        }
+
+        .alert-danger {
+            border-left-color: var(--danger);
+            background: rgba(255, 59, 48, 0.1);
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        /* Feature highlights */
+        .feature {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            min-width: 2rem;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-mid);
+            border-top: 2px solid var(--primary);
+            padding: 2rem 0;
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Scroll to top button */
+        #scrollTop {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px rgba(248, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        #scrollTop:hover {
+            background: var(--primary-dark);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(248, 0, 0, 0.5);
+        }
+
+        #scrollTop.show {
+            display: flex;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+        }
+
+        /* Comparison table special styling */
+        .comparison-table {
+            margin: 2rem 0;
+        }
+
+        .comparison-table th:first-child {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Command examples */
+        .cmd-example {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cmd-label {
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .cmd-text {
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Oracle Database Backup & Recovery</h1>
+            <p class="subtitle">Complete Guide to RMAN (Recovery Manager)</p>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <div class="nav-grid">
+                <a href="#failures" class="nav-item">Data Failures</a>
+                <a href="#recovery-objectives" class="nav-item">Recovery Objectives</a>
+                <a href="#rman-intro" class="nav-item">RMAN Introduction</a>
+                <a href="#architecture" class="nav-item">Architecture</a>
+                <a href="#backup-strategy" class="nav-item">Backup Strategy</a>
+                <a href="#commands" class="nav-item">Commands</a>
+                <a href="#incremental" class="nav-item">Incremental Backups</a>
+                <a href="#recovery" class="nav-item">Recovery Procedures</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <!-- Data Failure Categories -->
+        <section id="failures">
+            <h2>Data Failure Categories</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🔧 Media Failure</h4>
+                    <ul>
+                        <li>Faulty hardware</li>
+                        <li>Deleted data files</li>
+                        <li>Storage problems</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>👤 User Error</h4>
+                    <ul>
+                        <li>Accidental data deletion</li>
+                        <li>Wrong uploads</li>
+                        <li>Dropped tables</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🌐 Network Failure</h4>
+                    <ul>
+                        <li>Faulty interfaces</li>
+                        <li>Misconfigurations</li>
+                        <li>Listener failures</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>💻 Application Errors</h4>
+                    <ul>
+                        <li>Incorrect logic</li>
+                        <li>Wrong data changes</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🌪️ Disasters</h4>
+                    <ul>
+                        <li>Floods, earthquakes</li>
+                        <li>Fires, water leaks</li>
+                        <li>Physical destruction</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recovery Objectives -->
+        <section id="recovery-objectives">
+            <h2>Key Recovery Objectives</h2>
+            
+            <div class="alert alert-info">
+                <strong>Important Note</strong>
+                RTO and RPO are determined by the business, not DBAs, based on the value of the system. They differ depending on how critical the system is.
+            </div>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>⏱️ RTO (Recovery Time Objective)</h4>
+                    <p>Maximum downtime allowed</p>
+                    <div class="badge badge-warning">Example: 10 minutes</div>
+                </div>
+                <div class="card">
+                    <h4>📊 RPO (Recovery Point Objective)</h4>
+                    <p>Maximum data loss tolerated</p>
+                    <div class="badge badge-warning">Example: 1 day</div>
+                </div>
+            </div>
+
+            <h3>Oracle Recovery Solutions Comparison</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Solution</th>
+                        <th>Purpose</th>
+                        <th>License</th>
+                        <th>Key Features</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RMAN</strong></td>
+                        <td>Backups & recovery</td>
+                        <td><span class="badge badge-success">Included</span></td>
+                        <td>Partial backups, handles all failure types, slower recovery</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RAC</strong></td>
+                        <td>High availability</td>
+                        <td><span class="badge badge-danger">Separate, expensive</span></td>
+                        <td>Active clustering, zero downtime, hardware fault tolerance</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Guard</strong></td>
+                        <td>Disaster recovery</td>
+                        <td><span class="badge badge-warning">Separate (Active DG optional)</span></td>
+                        <td>Redo log sync, standby database, read-only access with license</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Flashback DB</strong></td>
+                        <td>Point-in-time recovery</td>
+                        <td><span class="badge badge-info">Enterprise Manager</span></td>
+                        <td>Rewinds database using flashback logs, partial recovery</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Recovery Plan Phases -->
+        <section>
+            <h2>Recovery Plan Phases</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>1️⃣ Define</h4>
+                    <p>Establish RTO and RPO targets</p>
+                </div>
+                <div class="card">
+                    <h4>2️⃣ Implement</h4>
+                    <p>Acquire licenses and hardware, configure solutions</p>
+                </div>
+                <div class="card">
+                    <h4>3️⃣ Monitor</h4>
+                    <p>Observe system performance and detect issues</p>
+                </div>
+                <div class="card">
+                    <h4>4️⃣ Adjust</h4>
+                    <p>Optimize procedures based on testing and feedback</p>
+                </div>
+            </div>
+
+            <h3>Best Practices</h3>
+            <div class="alert alert-success">
+                <ul>
+                    <li>Prepare for all types of failures, regardless of cost</li>
+                    <li>Align recovery solutions with system value and budget</li>
+                    <li>Regularly test recovery processes</li>
+                    <li>Keep detailed documentation of both backup and recovery steps</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- RMAN Introduction -->
+        <section id="rman-intro">
+            <h2>What is RMAN?</h2>
+            <p><strong>Recovery Manager (RMAN)</strong>: Oracle's built-in utility for database backup and recovery.</p>
+            
+            <div class="feature">
+                <div class="feature-icon">✅</div>
+                <div>
+                    <strong>Included with Oracle Standard and Enterprise Editions</strong>
+                    <p>No additional license required</p>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">💻</div>
+                <div>
+                    <strong>Runs outside the database</strong>
+                    <p>But integrates seamlessly with it</p>
+                </div>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">📝</div>
+                <div>
+                    <strong>Command-line interface</strong>
+                    <p>With scripting capabilities</p>
+                </div>
+            </div>
+
+            <h3>Key Benefits</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>⚡ Efficient Backups</h4>
+                    <p>Skips unused data blocks to save time and space</p>
+                </div>
+                <div class="card">
+                    <h4>📈 Incremental Backups</h4>
+                    <p>Only backs up changes since the last backup</p>
+                </div>
+                <div class="card">
+                    <h4>🌍 Platform Independent</h4>
+                    <p>Works across different operating systems</p>
+                </div>
+                <div class="card">
+                    <h4>🔒 Encryption</h4>
+                    <p>Secures backup files</p>
+                </div>
+                <div class="card">
+                    <h4>🔄 Database Cloning</h4>
+                    <p>Create copies offline or online</p>
+                </div>
+                <div class="card">
+                    <h4>📼 Tape Compatibility</h4>
+                    <p>Works with Oracle Secure Backup, NetBackup, TSM, etc.</p>
+                </div>
+                <div class="card">
+                    <h4>☁️ Cloud Support</h4>
+                    <p>Direct backups to Oracle Cloud or Amazon S3</p>
+                </div>
+                <div class="card">
+                    <h4>🗜️ Compression</h4>
+                    <p>Reduces backup file sizes</p>
+                </div>
+                <div class="card">
+                    <h4>🔍 Corruption Detection</h4>
+                    <p>Detects corrupted blocks during backup</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section id="architecture">
+            <h2>RMAN Architecture Components</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🎯 Target Database</h4>
+                    <p>The database being backed up or recovered</p>
+                </div>
+                <div class="card">
+                    <h4>📚 Recovery Catalog Database</h4>
+                    <p>Stores backup metadata <span class="badge badge-info">Optional</span></p>
+                </div>
+                <div class="card">
+                    <h4>💾 Backup Storage</h4>
+                    <p>Disks, cloud storage, tape libraries, or ZDLRA</p>
+                </div>
+                <div class="card">
+                    <h4>📋 Duplicate Database</h4>
+                    <p>Optional copy created from the target</p>
+                </div>
+            </div>
+
+            <h3>Command Types</h3>
+            <ul>
+                <li><strong>Interactive commands:</strong> Entered directly at the RMAN prompt</li>
+                <li><strong>Script commands:</strong> Run from OS scripts or scheduled jobs</li>
+                <li><strong>EM/Third-party integration:</strong> Via Oracle Enterprise Manager or backup software</li>
+            </ul>
+
+            <h3>Physical vs Logical Backups</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Tool</th>
+                        <th>Description</th>
+                        <th>Recommendation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Physical</td>
+                        <td><strong>RMAN</strong></td>
+                        <td>Copies actual data blocks</td>
+                        <td><span class="badge badge-success">Recommended</span></td>
+                    </tr>
+                    <tr>
+                        <td>Logical</td>
+                        <td><strong>Data Pump</strong></td>
+                        <td>Exports data as SQL commands</td>
+                        <td><span class="badge badge-warning">Not for backups</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Getting Started -->
+        <section>
+            <h2>Getting Started Commands</h2>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">Start RMAN:</div>
+                <div class="cmd-text">rman</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Connect to target database:</div>
+                <div class="cmd-text">CONNECT TARGET username/password@database</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Configure settings:</div>
+                <div class="cmd-text">CONFIGURE ...;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Issue commands:</div>
+                <div class="cmd-text">BACKUP DATABASE;<br>RESTORE DATABASE;<br>RECOVER DATABASE;</div>
+            </div>
+        </section>
+
+        <!-- RMAN Command Language -->
+        <section id="commands">
+            <h2>RMAN Command Language Overview</h2>
+            
+            <div class="alert alert-info">
+                <strong>Key Concept</strong>
+                RMAN has its own command language, separate from the operating system.
+            </div>
+
+            <h3>Command Types</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Stand-alone Commands</h4>
+                    <p>Executed individually at the RMAN prompt</p>
+                    <pre><code>BACKUP DATABASE;</code></pre>
+                    <p>Type the command with a semicolon (;) and press Enter. RMAN executes it immediately.</p>
+                </div>
+                <div class="card">
+                    <h4>Job Commands (RUN Blocks)</h4>
+                    <p>Grouped together and executed sequentially</p>
+                    <pre><code>RUN {
+   command1;
+   command2;
+   command3;
+}</code></pre>
+                    <p>If any command fails, RMAN stops executing remaining commands. Effects of executed commands are not undone.</p>
+                </div>
+            </div>
+
+            <h3>RMAN Persistent Settings</h3>
+            <p>RMAN behavior is controlled by configuration settings stored in the control file and optionally in the recovery catalog.</p>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">View all settings:</div>
+                <div class="cmd-text">SHOW ALL;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">View specific setting:</div>
+                <div class="cmd-text">SHOW &lt;setting&gt;;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Query via SQL:</div>
+                <div class="cmd-text">SELECT * FROM V$RMAN_CONFIGURATION;</div>
+            </div>
+
+            <h3>Modes of Issuing RMAN Commands</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mode</th>
+                        <th>Description</th>
+                        <th>Best For</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Interactive</strong></td>
+                        <td>Type commands directly at the prompt</td>
+                        <td>One-time operations, reports, specific backups/recoveries</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Batch</strong></td>
+                        <td>Commands written in a file, run using <code>rman @script_file</code></td>
+                        <td>Automated jobs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Pipe Interface</strong></td>
+                        <td>Commands via DBMS_PIPE PL/SQL package</td>
+                        <td>External applications (rarely used by DBAs)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Backup Strategy -->
+        <section id="backup-strategy">
+            <h2>Backup Strategy</h2>
+
+            <h3>Backup Options</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Whole Database Backup</h4>
+                    <ul>
+                        <li>Includes all data files</li>
+                        <li>Includes control file</li>
+                        <li>Backs up entire database</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Partial Database Backup</h4>
+                    <ul>
+                        <li>Specific tablespaces only</li>
+                        <li>Specific data files only</li>
+                        <li>May include/exclude control file</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Backup Types</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Requirements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Full Backup</strong></td>
+                        <td>Backs up all used data blocks in specified files</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Incremental Backup</strong></td>
+                        <td>Backs up only blocks changed since previous backup</td>
+                        <td>Requires Level 0 backup first</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-warning">
+                <strong>Important Note</strong>
+                Full backup ≠ Whole backup
+                <ul>
+                    <li><strong>Full backup:</strong> backs up all used blocks</li>
+                    <li><strong>Whole backup:</strong> backs up the entire database</li>
+                    <li>Both can be combined (e.g., full backup of the entire database)</li>
+                </ul>
+            </div>
+
+            <h3>Backup Modes</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>❄️ Offline (Cold) Backup</h4>
+                    <p><strong>Status:</strong> Database closed</p>
+                    <p><strong>Consistency:</strong> SCN numbers in all data file headers match the control file</p>
+                    <span class="badge badge-success">Consistent</span>
+                </div>
+                <div class="card">
+                    <h4>🔥 Online (Hot) Backup</h4>
+                    <p><strong>Status:</strong> Database open</p>
+                    <p><strong>Consistency:</strong> Data files may not be synchronized with control files</p>
+                    <span class="badge badge-warning">Inconsistent</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- RMAN Backup File Types -->
+        <section>
+            <h2>RMAN Backup File Types</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Backup Set</th>
+                        <th>Image Copy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Contains</strong></td>
+                        <td>Used blocks only</td>
+                        <td>Full copy of data files</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Storage</strong></td>
+                        <td>Disk or tape</td>
+                        <td>Disk only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Restore granularity</strong></td>
+                        <td>Must extract from backup set</td>
+                        <td>Can restore individual file directly</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Space efficiency</strong></td>
+                        <td><span class="badge badge-success">Smaller</span></td>
+                        <td><span class="badge badge-warning">Larger</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Use for standby DB</strong></td>
+                        <td>Not directly</td>
+                        <td>Yes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-success">
+                <strong>Recommendation</strong>
+                <ul>
+                    <li>Use <strong>backup sets</strong> for regular backups</li>
+                    <li>Use <strong>image copies</strong> if granular restore or standby DB setup is needed</li>
+                </ul>
+            </div>
+
+            <h3>RMAN Backupable Files</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>✅ Can Backup</h4>
+                    <ul>
+                        <li>Data files</li>
+                        <li>Control files</li>
+                        <li>Server parameter files</li>
+                        <li>Archived redo logs</li>
+                        <li>RMAN backups</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>❌ Cannot Backup</h4>
+                    <ul>
+                        <li>Online redo logs</li>
+                        <li>Network configuration files</li>
+                        <li>Password files</li>
+                        <li>Keystore files</li>
+                    </ul>
+                    <p><small>Must backup manually</small></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- BACKUP Command -->
+        <section>
+            <h2>RMAN BACKUP Command</h2>
+
+            <h3>Backup Types by Consistency</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🔥 Inconsistent Backup (Hot)</h4>
+                    <ul>
+                        <li>Taken while database is open</li>
+                        <li>SCN numbers may not match control file</li>
+                        <li>Can only be done in ARCHIVELOG mode</li>
+                        <li>Recovery requires applying archived redo logs</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>❄️ Consistent Backup (Cold)</h4>
+                    <ul>
+                        <li>Taken while database is mounted after clean shutdown</li>
+                        <li>SCN and checkpoint timestamps synchronized</li>
+                        <li>Can be done in ARCHIVELOG or NOARCHIVELOG mode</li>
+                        <li>In NOARCHIVELOG mode, changes after backup are lost if failure occurs</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Performing Backups</h3>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">Online Backup (Open Database):</div>
+                <div class="cmd-text">BACKUP DATABASE PLUS ARCHIVELOG;</div>
+            </div>
+            <p>Backs up data files and archived redo logs. RMAN takes two backups of archived redo logs (before and after data file backup) to ensure recoverability.</p>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Offline Backup (Mounted Database):</div>
+                <div class="cmd-text">BACKUP DATABASE;</div>
+            </div>
+            <p>Requires shutdown and mount before backup. Database can be started after backup completes.</p>
+
+            <h3>Partial Backups</h3>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">Backup specific tablespaces:</div>
+                <div class="cmd-text">BACKUP TABLESPACE users, tools;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Backup data files by number:</div>
+                <div class="cmd-text">BACKUP DATAFILE 1,2,3,4;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Backup data files by full path:</div>
+                <div class="cmd-text">BACKUP DATAFILE '/u01/oradata/orcl/users01.dbf';</div>
+            </div>
+
+            <h3>Backup File Locations and Naming</h3>
+            <ul>
+                <li><strong>Default storage:</strong> FRA (Flash Recovery Area)</li>
+                <li><strong>FORMAT option:</strong> Specify path and file name pattern</li>
+            </ul>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Custom format:</div>
+                <div class="cmd-text">BACKUP DATABASE FORMAT '/u02/orcl_%U';</div>
+            </div>
+            <p><code>%U</code> generates a unique string to ensure unique file names</p>
+
+            <div class="cmd-example">
+                <div class="cmd-label">ASM diskgroups:</div>
+                <div class="cmd-text">BACKUP DATABASE FORMAT '+DGNAME';</div>
+            </div>
+            <p>ASM automatically generates unique names</p>
+        </section>
+
+        <!-- Backing Up Control File and SPFILE -->
+        <section>
+            <h2>Backing Up Control File and SPFILE</h2>
+
+            <h3>Control File Backup Methods</h3>
+            
+            <div class="card">
+                <h4>1️⃣ Automatic Backup (Autobackup)</h4>
+                <div class="cmd-example">
+                    <div class="cmd-text">CONFIGURE CONTROLFILE AUTOBACKUP ON;</div>
+                </div>
+                <p><span class="badge badge-success">ON by default from 12.2 onward</span></p>
+                <p>Occurs after every RMAN backup automatically</p>
+            </div>
+
+            <div class="card">
+                <h4>2️⃣ Manual Backups</h4>
+                <div class="cmd-example">
+                    <div class="cmd-text">BACKUP DATABASE INCLUDE CURRENT CONTROLFILE;</div>
+                </div>
+                <div class="cmd-example">
+                    <div class="cmd-text">BACKUP CURRENT CONTROLFILE;</div>
+                </div>
+                <div class="cmd-example">
+                    <div class="cmd-text">BACKUP AS COPY CURRENT CONTROLFILE;</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h4>3️⃣ Indirect Method</h4>
+                <p>Backing up data file #1 automatically includes the control file and SPFILE</p>
+            </div>
+
+            <h3>SPFILE Backup</h3>
+            <ul>
+                <li>SPFILE contains initialization parameters for the database</li>
+                <li>Autobackup of control file includes a backup of SPFILE automatically</li>
+            </ul>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Manual backup command:</div>
+                <div class="cmd-text">BACKUP SPFILE;</div>
+            </div>
+
+            <h3>Trace File Backup</h3>
+            <p>Generates SQL statements to recreate control file if all backups are lost</p>
+            
+            <div class="cmd-example">
+                <div class="cmd-text">ALTER DATABASE BACKUP CONTROLFILE TO TRACE;</div>
+            </div>
+            <p>Saved under <code>$DIAGNOSTIC_DEST</code> directory</p>
+            
+            <div class="alert alert-warning">
+                <strong>Note:</strong> Cannot be executed directly; must follow the instructions in the trace file.
+            </div>
+        </section>
+
+        <!-- Archivelog Backups -->
+        <section>
+            <h2>Archivelog Backup Commands</h2>
+
+            <h3>BACKUP ARCHIVELOG Command</h3>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">All available archivelogs:</div>
+                <div class="cmd-text">BACKUP ARCHIVELOG ALL;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Delete after backup:</div>
+                <div class="cmd-text">BACKUP ARCHIVELOG ALL DELETE INPUT;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Backup by SCN range:</div>
+                <div class="cmd-text">BACKUP ARCHIVELOG FROM SCN 1000 UNTIL SCN 2000;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Backup by sequence number:</div>
+                <div class="cmd-text">BACKUP ARCHIVELOG SEQUENCE 100 UNTIL 200;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Backup by time:</div>
+                <div class="cmd-text">BACKUP ARCHIVELOG FROM TIME "SYSDATE-1";</div>
+            </div>
+
+            <h3>BACKUP DATABASE PLUS ARCHIVELOG</h3>
+            <p>Simplifies backup process by including archived redo logs automatically</p>
+
+            <div class="alert alert-info">
+                <strong>Internal Steps RMAN Performs:</strong>
+                <ol>
+                    <li>Runs <code>ALTER SYSTEM ARCHIVE LOG CURRENT</code></li>
+                    <li>Runs <code>BACKUP ARCHIVELOG ALL</code></li>
+                    <li>Backs up the specified objects</li>
+                    <li>Runs <code>ALTER SYSTEM ARCHIVE LOG CURRENT</code> again</li>
+                    <li>Backs up any remaining archived redo logs</li>
+                </ol>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-text">BACKUP DATABASE PLUS ARCHIVELOG;</div>
+            </div>
+
+            <div class="alert alert-success">
+                <strong>Recommendation:</strong> Use <code>BACKUP DATABASE PLUS ARCHIVELOG</code> for online backups to ensure recoverability.
+            </div>
+        </section>
+
+        <!-- Incremental Backups -->
+        <section id="incremental">
+            <h2>Incremental Backups</h2>
+
+            <h3>Overview</h3>
+            <p>Only backs up changed blocks since the last backup, not the entire database.</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>⚡ Benefits</h4>
+                    <ul>
+                        <li>Faster than full backups</li>
+                        <li>Less storage space required</li>
+                        <li>Lower I/O bandwidth needed</li>
+                        <li>Can back up NOLOGGING objects</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Level 0 and Level 1 Backups</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Description</th>
+                        <th>File Types</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Level 0</strong></td>
+                        <td>Full backup of all database blocks. Forms the base for all Level 1 backups.</td>
+                        <td>Backupsets or image copies</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Level 1</strong></td>
+                        <td>Backs up only changed blocks</td>
+                        <td>Backupsets only (not image copies)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Differential vs Cumulative</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Differential</th>
+                        <th>Cumulative</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>What it backs up</strong></td>
+                        <td>Changes since last incremental backup</td>
+                        <td>Changes since last Level 0 backup</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Backup size</strong></td>
+                        <td><span class="badge badge-success">Smaller</span></td>
+                        <td><span class="badge badge-warning">Larger</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Recovery</strong></td>
+                        <td>Reads all Level 1 backups + Level 0</td>
+                        <td>Reads only most recent Level 1 + Level 0</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Advantage</strong></td>
+                        <td>Saves storage space</td>
+                        <td>Faster recovery</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-success">
+                <strong>Recommendation:</strong> Differential backups are preferred in large databases to save disk space.
+            </div>
+
+            <h3>Incremental Backup Commands</h3>
+            
+            <div class="cmd-example">
+                <div class="cmd-label">Default (Differential):</div>
+                <div class="cmd-text">BACKUP INCREMENTAL LEVEL 1 DATABASE;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Cumulative:</div>
+                <div class="cmd-text">BACKUP INCREMENTAL LEVEL 1 CUMULATIVE DATABASE;</div>
+            </div>
+
+            <h3>Block Change Tracking (BCT)</h3>
+            <p>Speeds up incremental backups by tracking changed blocks in a tracking file.</p>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Enable BCT:</div>
+                <div class="cmd-text">ALTER DATABASE ENABLE BLOCK CHANGE TRACKING USING FILE '/u01/oradata/bct_file.bct';</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Disable BCT:</div>
+                <div class="cmd-text">ALTER DATABASE DISABLE BLOCK CHANGE TRACKING;</div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>BCT Key Points:</strong>
+                <ul>
+                    <li>Can track up to 8 incremental backups</li>
+                    <li>After 7 incremental backups, take a full Level 0 backup</li>
+                    <li>BCT file grows in 10 MB increments</li>
+                    <li>Not suitable if >20% of database changes frequently</li>
+                    <li>Not enabled by default</li>
+                    <li>RMAN does not backup or restore BCT file</li>
+                </ul>
+            </div>
+
+            <h3>Best Practices for Incremental Backups</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>📅 Weekends</h4>
+                    <p>Take Level 0 incremental backup</p>
+                </div>
+                <div class="card">
+                    <h4>📆 Weekdays</h4>
+                    <p>Take Level 1 incremental backups (off-peak hours)</p>
+                </div>
+                <div class="card">
+                    <h4>💾 Backup Type</h4>
+                    <p>Prefer differential incremental backups over cumulative</p>
+                </div>
+                <div class="card">
+                    <h4>⚡ Performance</h4>
+                    <p>Enable Block Change Tracking for large databases</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Retention Policy -->
+        <section>
+            <h2>Backup Retention Policy</h2>
+
+            <p>Retention policy determines which backups RMAN keeps or marks as obsolete.</p>
+
+            <h3>Types of Retention Policies</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>📊 Redundancy-Based</h4>
+                    <p>Keeps a fixed number of backups</p>
+                    <div class="cmd-example">
+                        <div class="cmd-text">CONFIGURE RETENTION POLICY TO REDUNDANCY 3;</div>
+                    </div>
+                    <p><small>Keeps last 3 backups, older ones marked obsolete</small></p>
+                </div>
+                <div class="card">
+                    <h4>⏰ Window-Based (Time-Based)</h4>
+                    <p>Keeps backups for a specified period</p>
+                    <div class="cmd-example">
+                        <div class="cmd-text">CONFIGURE RETENTION POLICY TO RECOVERY WINDOW OF 7 DAYS;</div>
+                    </div>
+                    <p><small>Allows recovery to any point in last 7 days</small></p>
+                </div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>Important Notes:</strong>
+                <ul>
+                    <li>Only one retention policy can be active at a time</li>
+                    <li>Default redundancy is 1 backup</li>
+                    <li>Always configure a retention policy to avoid storage issues in FRA</li>
+                </ul>
+            </div>
+
+            <h3>Disabling Retention Policy</h3>
+            <div class="cmd-example">
+                <div class="cmd-text">CONFIGURE RETENTION POLICY TO NONE;</div>
+            </div>
+            
+            <div class="alert alert-danger">
+                <strong>Not Recommended:</strong> RMAN won't consider any backup obsolete. Especially problematic when using FRA.
+            </div>
+        </section>
+
+        <!-- RMAN Recovery -->
+        <section id="recovery">
+            <h2>RMAN Recovery Overview</h2>
+
+            <h3>Types of Database Failures</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🔧 Physical Failures</h4>
+                    <p>Problems with actual database files (lost or corrupted)</p>
+                </div>
+                <div class="card">
+                    <h4>💭 Logical Failures</h4>
+                    <p>Issues caused by applications or users (accidental or intentional data changes)</p>
+                </div>
+            </div>
+
+            <h3>RMAN Recovery Concepts</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Command</th>
+                        <th>Purpose</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>RESTORE</strong></td>
+                        <td>Creates database file from backup</td>
+                        <td>Restores file to backup point, not the failure time</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RECOVER</strong></td>
+                        <td>Applies changes</td>
+                        <td>Uses archived redo logs, incremental backups, and online redo logs</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="alert alert-info">
+                <strong>Recovery Types:</strong>
+                <ul>
+                    <li><strong>Complete Recovery:</strong> Up to failure point</li>
+                    <li><strong>Incomplete / Point-in-Time Recovery (PITR):</strong> Up to a specified time before failure</li>
+                </ul>
+            </div>
+
+            <h3>Critical vs Non-Critical Files</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>❌ Non-Critical Files</h4>
+                    <p>Can be lost without crashing the DB</p>
+                    <ul>
+                        <li>Multiplexed redo logs</li>
+                        <li>Index tablespaces</li>
+                        <li>Init parameter files</li>
+                        <li>Inactive temp files</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🚨 Critical Files</h4>
+                    <p>Loss causes database crash</p>
+                    <ul>
+                        <li>Control files</li>
+                        <li>System tablespace datafiles</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Whole Database Recovery -->
+        <section>
+            <h2>Whole Database Recovery</h2>
+
+            <h3>NOARCHIVELOG Mode</h3>
+            <div class="alert alert-warning">
+                Cannot recover to the point of failure unless incremental backups exist.
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Recovery Steps:</div>
+                <div class="cmd-text">-- Start database in MOUNT state
+STARTUP MOUNT;
+
+-- Restore database
+RESTORE DATABASE;
+
+-- Recover database (typically does nothing in NOARCHIVELOG mode)
+RECOVER DATABASE;
+
+-- Open with RESETLOGS
+ALTER DATABASE OPEN RESETLOGS;</div>
+            </div>
+
+            <h3>ARCHIVELOG Mode</h3>
+            <div class="alert alert-success">
+                Can perform complete or incomplete recovery. Most production databases use ARCHIVELOG mode.
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Recovery Steps:</div>
+                <div class="cmd-text">STARTUP MOUNT;
+RESTORE DATABASE;
+RECOVER DATABASE;
+ALTER DATABASE OPEN;</div>
+            </div>
+
+            <h3>Recovery to a New Location</h3>
+            <div class="cmd-example">
+                <div class="cmd-text">RUN {
+  SET NEWNAME FOR DATAFILE 1 TO '/new/location/system01.dbf';
+  SET NEWNAME FOR DATAFILE 2 TO '/new/location/sysaux01.dbf';
+  RESTORE DATABASE;
+  SWITCH DATAFILE ALL;
+  RECOVER DATABASE;
+}</div>
+            </div>
+        </section>
+
+        <!-- User Tablespace Recovery -->
+        <section>
+            <h2>User Tablespace Recovery</h2>
+
+            <p>Only affects the specific tablespace, not SYSTEM, SYSAUX, UNDO, or TEMP tablespaces.</p>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Recovery Steps:</div>
+                <div class="cmd-text">-- Take tablespace OFFLINE
+ALTER TABLESPACE users OFFLINE;
+
+-- Restore tablespace
+RESTORE TABLESPACE users;
+
+-- Recover tablespace
+RECOVER TABLESPACE users;
+
+-- Bring tablespace ONLINE
+ALTER TABLESPACE users ONLINE;</div>
+            </div>
+        </section>
+
+        <!-- Recovery by Switching -->
+        <section>
+            <h2>Recovery by Switching Data Files</h2>
+
+            <p>Instead of restoring datafiles from backup sets, switch the database to use existing data file image copies.</p>
+
+            <div class="alert alert-success">
+                <strong>Advantage:</strong> Faster than restoring from backups because RMAN updates the control file instead of creating new files.
+            </div>
+
+            <h3>Scenario: All Database Datafiles Lost</h3>
+            <div class="cmd-example">
+                <div class="cmd-text">-- Mount the database
+STARTUP MOUNT;
+
+-- Switch to data file copies
+SWITCH DATABASE TO COPY;
+
+-- Recover database
+RECOVER DATABASE;
+
+-- Open database
+ALTER DATABASE OPEN;</div>
+            </div>
+
+            <h3>Scenario: Single User Tablespace Datafile Lost</h3>
+            <div class="cmd-example">
+                <div class="cmd-text">-- Take datafile offline
+ALTER DATABASE DATAFILE 5 OFFLINE;
+
+-- Switch to image copy
+SWITCH DATAFILE 5 TO COPY;
+
+-- Recover datafile
+RECOVER DATAFILE 5;
+
+-- Bring datafile online
+ALTER DATABASE DATAFILE 5 ONLINE;</div>
+            </div>
+        </section>
+
+        <!-- Point-in-Time Recovery -->
+        <section>
+            <h2>Point-in-Time Recovery (PITR)</h2>
+
+            <p>Restore the database or parts of it to a previous state (e.g., accidental data changes or missing archive logs).</p>
+
+            <h3>Levels of PITR</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🗄️ Database Level</h4>
+                    <p>DBPITR - Full database recovery</p>
+                </div>
+                <div class="card">
+                    <h4>📦 Tablespace Level</h4>
+                    <p>TSPITR - Single tablespace recovery</p>
+                </div>
+                <div class="card">
+                    <h4>📋 Table Level</h4>
+                    <p>Recover specific tables</p>
+                </div>
+            </div>
+
+            <h3>Recovery Point Options</h3>
+            <ul>
+                <li>SCN (System Change Number)</li>
+                <li>Redo log sequence number</li>
+                <li>Restore point</li>
+                <li>Timestamp</li>
+            </ul>
+            <p><small>Oracle converts all to SCN internally</small></p>
+
+            <h3>DBPITR Requirements</h3>
+            <div class="alert alert-info">
+                <ul>
+                    <li>Database must be in ARCHIVELOG mode</li>
+                    <li>Backups of all datafiles must exist before the required recovery SCN</li>
+                </ul>
+            </div>
+
+            <h3>DBPITR Procedure</h3>
+            <div class="cmd-example">
+                <div class="cmd-label">Step-by-Step Recovery:</div>
+                <div class="cmd-text">-- Shutdown database
+SHUTDOWN IMMEDIATE;
+
+-- Start RMAN and run recovery
+RUN {
+  SET UNTIL TIME 'yyyy-mm-dd hh24:mi:ss';
+  RESTORE DATABASE;
+  RECOVER DATABASE;
+}
+
+-- Open with RESETLOGS
+ALTER DATABASE OPEN RESETLOGS;</div>
+            </div>
+
+            <div class="alert alert-warning">
+                <strong>RESETLOGS Required:</strong> After DBPITR, the database must be opened with RESETLOGS, which:
+                <ul>
+                    <li>Archives online redo logs if present</li>
+                    <li>Clears or recreates online redo logs</li>
+                    <li>Resets log sequence to 1</li>
+                    <li>Updates all files with a new RESETLOGS SCN</li>
+                    <li>Creates a new database incarnation</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Using TAGs and Device Types -->
+        <section>
+            <h2>Advanced RMAN Features</h2>
+
+            <h3>Using TAGs</h3>
+            <p>Assign a meaningful name to a backup set or image copy for easier management and recovery.</p>
+
+            <div class="cmd-example">
+                <div class="cmd-text">BACKUP DATABASE TAG 'MONTH_WHOLE_BACKUP';</div>
+            </div>
+
+            <div class="alert alert-success">
+                <strong>Best Practice:</strong> Always use TAGs in production environments for better backup management.
+            </div>
+
+            <h3>Backup Storage Devices</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Device Type</th>
+                        <th>Description</th>
+                        <th>Requirements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Disk</strong></td>
+                        <td>RMAN saves backups to disk storage</td>
+                        <td><span class="badge badge-success">Default</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Tape (SBT)</strong></td>
+                        <td>System Backup to Tape</td>
+                        <td><span class="badge badge-warning">Requires third-party software</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Set default device type:</div>
+                <div class="cmd-text">CONFIGURE DEFAULT DEVICE TYPE TO DISK;</div>
+            </div>
+
+            <div class="cmd-example">
+                <div class="cmd-label">Override at command level:</div>
+                <div class="cmd-text">BACKUP DATABASE DEVICE TYPE SBT;</div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>Oracle Database Backup & Recovery with RMAN - Comprehensive Guide</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Always test your backup and recovery procedures in a non-production environment</p>
+        </div>
+    </footer>
+
+    <button id="scrollTop" aria-label="Scroll to top">↑</button>
+
+    <script>
+        // Smooth scrolling for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Scroll to top button
+        const scrollTopBtn = document.getElementById('scrollTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                scrollTopBtn.classList.add('show');
+            } else {
+                scrollTopBtn.classList.remove('show');
+            }
+        });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Add animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section').forEach(section => {
+            section.style.opacity = '0';
+            section.style.transform = 'translateY(20px)';
+            section.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>
