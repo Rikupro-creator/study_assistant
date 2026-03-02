@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Oracle Security: OS & Password File Authentication</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f7f9;
+        }
+        h1 {
+            color: #a51d1d;
+            border-bottom: 4px solid #a51d1d;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #0d3d77;
+            margin-top: 0;
+            border-bottom: 2px solid #0d3d77;
+            padding-bottom: 5px;
+        }
+        h3 {
+            color: #1b6d8a;
+            margin: 20px 0 10px 0;
+        }
+        .section {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 35px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 6px solid #0d6efd;
+        }
+        .note {
+            background-color: #e7f5ff;
+            border-left: 6px solid #0dcaf0;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 6px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .tip {
+            background-color: #d1e7dd;
+            border-left: 6px solid #198754;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .code-block {
+            background-color: #1e293b;
+            color: #e9ecef;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+        .sql-keyword {
+            color: #ff8a8a;
+            font-weight: bold;
+        }
+        .sql-comment {
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .sql-string {
+            color: #6ab04c;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .comparison-table th {
+            background-color: #0d3d77;
+            color: white;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .comparison-table td, .comparison-table th {
+            border: 1px solid #cbd5e1;
+            padding: 12px 10px;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .bullet-list {
+            padding-left: 20px;
+        }
+        .bullet-list li {
+            margin-bottom: 8px;
+        }
+        .glossary-term {
+            font-weight: bold;
+            color: #b02a37;
+            background-color: #f8d7da;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #aaa, transparent);
+            margin: 30px 0;
+        }
+        .footer-note {
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px dashed #adb5bd;
+        }
+        .flow-chart {
+            background-color: #f1f3f4;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.4;
+            overflow-x: auto;
+            border: 1px dashed #0d3d77;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LECTURE 1: OS AUTHENTICATION -->
+    <h1>🖥️ Using OS Authentication</h1>
+    <div class="section">
+        <h2>🎯 Learning Objectives</h2>
+        <ul class="bullet-list">
+            <li>Understand database administrator authentication</li>
+            <li>Describe administrative OS authentication groups</li>
+            <li>Allow administrative OS authentication to OS users</li>
+            <li>Create OS-authenticated normal users</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔐 Authentication Methods in Oracle</h2>
+        <p><span class="glossary-term">Authentication</span> = verifying the identity of a user, program, or device.</p>
+        <p><strong>Main methods:</strong></p>
+        <ul class="bullet-list">
+            <li><strong>Oracle Database authentication:</strong> username/password stored inside the database.</li>
+            <li><strong>Operating System (OS) authentication:</strong> user already authenticated by OS; no password required for DB login.</li>
+            <li><strong>Password file authentication:</strong> credentials stored in an external password file.</li>
+            <li>Network-based methods: SSL, directory-based, third-party.</li>
+        </ul>
+        <div class="note">
+            <strong>📌 OS Authentication:</strong> Two types – administrative (for DBAs) and non-administrative (normal users). This lecture focuses on OS authentication.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧭 Administrator Authentication Flowchart</h2>
+        <p>The logic Oracle follows when an admin connects:</p>
+        <div class="flow-chart">
+            ┌─────────────────────────────────┐
+            │   Administrator wants to connect │
+            └──────────────┬──────────────────┘
+                           ▼
+            ┌─────────────────────────────┐
+            │ Connection method?           │
+            ├─────────────┬───────────────┤
+            │ Local (no @)│ Remote (with @)│
+            └──────┬──────┴───────┬───────┘
+                   ▼                ▼
+        ┌──────────────────┐  ┌──────────────────┐
+        │ Can use OS auth  │  │ Secure network?  │
+        │ OR password file │  └───────┬──────────┘
+        └──────┬───────────┘          ▼
+               ▼              ┌──────────────────┐
+        ┌──────────────────┐  │  YES (e.g. SSL)  │  ┌──────────────────┐
+        │ OS auth:         │  └────────┬─────────┘  │  NO (non-secure) │
+        │ checks group     │           ▼             └────────┬─────────┘
+        │ membership.      │  ┌──────────────────┐           ▼
+        │ Password ignored │  │ Can use OS auth  │  ┌──────────────────┐
+        └──────────────────┘  │ OR password file │  │ MUST use         │
+                              └──────────────────┘  │ password file    │
+                                                     └──────────────────┘
+        </div>
+        <div class="warning">
+            <strong>⚠️ Critical:</strong> A local user who is a member of the admin group (e.g., <code>dba</code>) can connect as SYSDBA with an incorrect password! OS authentication overrides password check locally.
+        </div>
+        <p>If no password file exists, only OS authentication is possible (for local/secure connections).</p>
+    </div>
+
+    <div class="section">
+        <h2>👥 Administrative OS Authentication Groups</h2>
+        <p>OS authentication works via <strong>OS group membership</strong>. The table below maps privileges to required groups (Linux/Windows).</p>
+        <table class="comparison-table">
+            <thead>
+                <tr><th>Admin Privilege</th><th>Linux Group</th><th>Windows Group</th><th>Default Schema</th><th>DBCA Identifier</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>SYSDBA</td><td><code>dba</code></td><td><code>ORA_DBA</code></td><td>SYS</td><td>OSDBA</td></tr>
+                <tr><td>SYSOPER</td><td><code>oper</code></td><td><code>ORA_OPER</code></td><td>PUBLIC</td><td>OSOPER</td></tr>
+                <tr><td>SYSBACKUP</td><td><code>backupdba</code></td><td><code>ORA_<i>HOMENAME</i>_SYSBACKUP</code></td><td>SYS</td><td>OSBACKUPDBA</td></tr>
+                <tr><td>SYSDG</td><td><code>dgdba</code></td><td><code>ORA_<i>HOMENAME</i>_SYSDG</code></td><td>SYS</td><td>OSDGDBA</td></tr>
+                <tr><td>SYSKM</td><td><code>kmdba</code></td><td><code>ORA_<i>HOMENAME</i>_SYSKM</code></td><td>SYS</td><td>OSKMDBA</td></tr>
+                <tr><td>SYSRAC</td><td><code>racdba</code></td><td><code>ORA_<i>HOMENAME</i>_SYSRAC</code></td><td>SYS</td><td>OSRACDBA</td></tr>
+            </tbody>
+        </table>
+        <p><strong>Default:</strong> Only the Oracle software owner (e.g., <code>oracle</code>) is in the <code>dba</code> group.</p>
+        <div class="tip">
+            <strong>🔧 Adding a user to an OS group (Linux):</strong>
+            <div class="code-block">sudo usermod -aG dba username   <span class="sql-comment"># Adds 'username' to dba group</span></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Configuring Groups with DBCA</h2>
+        <p>The DBCA utility allows you to choose which OS group maps to each administrative privilege. Groups must exist before running DBCA.</p>
+        <ul class="bullet-list">
+            <li><strong>Typical small environment:</strong> Use a single group (<code>dba</code>) for all privileges.</li>
+            <li><strong>Large environment (separation of duties):</strong> Create distinct groups (e.g., <code>backupdba</code> for backup team).</li>
+        </ul>
+        <p>Example: If the OS group <code>backupdba</code> exists, DBCA can assign it to <code>OSBACKUPDBA</code>.</p>
+    </div>
+
+    <div class="section">
+        <h2>🔌 Connecting via OS Authentication (SQL*Plus)</h2>
+        <p><strong>Local OS authentication:</strong> No <code>@</code> symbol used.</p>
+        <div class="code-block">
+            <span class="sql-comment">-- Connect as SYSDBA using OS authentication (requires membership in dba group)</span><br>
+            sqlplus / as sysdba<br><br>
+            <span class="sql-comment">-- Connect as SYSBACKUP using OS authentication (requires membership in backupdba group)</span><br>
+            sqlplus / as sysbackup
+        </div>
+        <p><strong>Windows note:</strong> You must specify the net service name, e.g., <code>sqlplus /@orcl as sysdba</code>.</p>
+        <div class="warning">
+            <strong>🚨 Security Concern:</strong> A system administrator can add themselves to the <code>dba</code> group and gain SYSDBA access without a password. In sensitive environments, separate OS and DBA roles or use additional controls.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧑‍💻 OS-Authenticated Normal Users</h2>
+        <p>Normal OS users can also connect without a password, but a corresponding database user must exist with the <code>IDENTIFIED EXTERNALLY</code> clause and a specific prefix.</p>
+        <h3>Procedure (non-CDB):</h3>
+        <ol class="bullet-list">
+            <li><strong>Create the OS user</strong> (e.g., <code>user1</code>).</li>
+            <li><strong>Check <code>OS_AUTHENT_PREFIX</code></strong> (default is <code>OPS$</code>).</li>
+            <div class="code-block">
+                <span class="sql-keyword">SHOW PARAMETER</span> os_authent_prefix<br>
+                <span class="sql-comment">-- Default: OPS$</span>
+            </div>
+            <li><strong>Create database user</strong> with the prefix + OS username, and <code>IDENTIFIED EXTERNALLY</code>.</li>
+            <div class="code-block">
+                <span class="sql-keyword">CREATE USER</span> ops<span class="sql-string">$user1</span> <span class="sql-keyword">IDENTIFIED EXTERNALLY</span>;<br>
+                <span class="sql-keyword">GRANT</span> create session <span class="sql-keyword">TO</span> ops<span class="sql-string">$user1</span>;
+            </div>
+            <li><strong>Connect:</strong> OS user logs into the server, sets environment, and runs <code>sqlplus /</code>.</li>
+        </ol>
+        <div class="note">
+            <strong>⚠️ Best practice:</strong> Avoid OS-authenticated users in production unless absolutely necessary.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧩 Multitenant Challenges</h2>
+        <p>Creating OS-authenticated <strong>common</strong> users is tricky:</p>
+        <ul class="bullet-list">
+            <li>Common users must start with <code>C##</code> (value of <code>COMMON_USER_PREFIX</code>).</li>
+            <li><code>OS_AUTHENT_PREFIX</code> defaults to <code>OPS$</code>.</li>
+            <li>Linux does not allow <code>#</code> in usernames.</li>
+        </ul>
+        <p><strong>Possible (but not recommended) workaround:</strong> Change both prefixes to a compatible value (e.g., <code>ZZ</code>).</p>
+        <div class="code-block">
+            <span class="sql-keyword">ALTER SYSTEM SET</span> os_authent_prefix=<span class="sql-string">''</span> SCOPE=SPFILE;<br>
+            <span class="sql-keyword">ALTER SYSTEM SET</span> common_user_prefix=<span class="sql-string">'ZZ'</span> SCOPE=SPFILE;<br>
+            <span class="sql-comment">-- Then create OS user 'zzuser1' and DB user 'zzuser1' IDENTIFIED EXTERNALLY</span>
+        </div>
+        <p><strong>Recommendation:</strong> Avoid OS authentication in multitenant; keep defaults.</p>
+    </div>
+
+    <hr>
+
+    <!-- LECTURE 2: PASSWORD FILE AUTHENTICATION -->
+    <h1>🔑 Using Password File Authentication</h1>
+    <div class="section">
+        <h2>🎯 Learning Objectives</h2>
+        <ul class="bullet-list">
+            <li>Describe password file authentication</li>
+            <li>Create a password file</li>
+            <li>Set <code>REMOTE_LOGIN_PASSWORDFILE</code> parameter</li>
+            <li>Understand how OS authentication supersedes password file authentication</li>
+            <li>Synchronize administrator passwords with the data dictionary</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📁 What is the Password File?</h2>
+        <p>An external file storing passwords of users with administrative privileges. Used when OS auth is not possible (e.g., remote non-secure connections).</p>
+        <ul class="bullet-list">
+            <li><strong>SYS</strong> password is <strong>only</strong> in the password file (since 12.2). Previously, it was also in the dictionary.</li>
+            <li>Other admin users (e.g., <code>SYSBACKUP</code>) have passwords in <strong>both</strong> the password file and the data dictionary.</li>
+            <li>One password file per database.</li>
+        </ul>
+        <p><strong>Default locations:</strong></p>
+        <div class="code-block">
+            <span class="sql-comment">-- Linux (under ORACLE_HOME/dbs)</span><br>
+            $ORACLE_HOME/dbs/orapw&lt;SID&gt;<br><br>
+            <span class="sql-comment">-- Windows (under ORACLE_HOME\database)</span><br>
+            %ORACLE_HOME%\database\PWD&lt;SID&gt;.ora
+        </div>
+        <p>Query current password file info:</p>
+        <div class="code-block">
+            <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> v<span class="sql-string">$passwordfile_info</span>;<br>
+            <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> v<span class="sql-string">$pwfile_users</span>;  <span class="sql-comment">-- Lists users with admin privileges in the password file</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ Creating a Password File with <code>orapwd</code></h2>
+        <p>Oracle utility <code>orapwd</code> creates or modifies the password file.</p>
+        <p><strong>Basic syntax (no spaces around =):</strong></p>
+        <div class="code-block">
+            orapwd FILE=<span class="sql-string">'$ORACLE_HOME/dbs/orapwORCL'</span> \<br>
+            FORCE=y \<br>
+            FORMAT=12.2 \<br>
+            SYS=<span class="sql-string">'password'</span>   <span class="sql-comment"># or omit to be prompted</span>
+        </div>
+        <ul class="bullet-list">
+            <li><code>FILE</code> – mandatory, full path and name (must match expected format).</li>
+            <li><code>FORCE=y</code> – overwrite existing file.</li>
+            <li><code>FORMAT</code> – <code>12</code> or <code>12.2</code> (default, recommended).</li>
+        </ul>
+        <div class="code-block">
+            <span class="sql-comment"># Example: create password file for SID 'orcl', will prompt for SYS password</span><br>
+            orapwd FILE=<span class="sql-string">'$ORACLE_HOME/dbs/orapworcl'</span> FORMAT=12.2
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Parameter: <code>REMOTE_LOGIN_PASSWORDFILE</code></h2>
+        <table class="comparison-table">
+            <thead><tr><th>Value</th><th>Description</th></tr></thead>
+            <tbody>
+                <tr><td><code>EXCLUSIVE</code> (default)</td><td>Password file used by one instance only. Allows adding/removing users.</td></tr>
+                <tr><td><code>SHARED</code></td><td>Multiple instances can share. File is read-only; cannot add users or change passwords.</td></tr>
+                <tr><td><code>NONE</code></td><td>Password file authentication disabled. No remote admin via password file.</td></tr>
+            </tbody>
+        </table>
+        <p>In practice, keep the default <code>EXCLUSIVE</code> unless you have a specific need for <code>SHARED</code> (e.g., RAC).</p>
+    </div>
+
+    <div class="section">
+        <h2>🥊 OS Authentication vs. Password File</h2>
+        <p><strong>When both are applicable, OS authentication takes precedence.</strong></p>
+        <div class="code-block">
+            <span class="sql-comment">-- Local connection with wrong password, but OS user is in dba group</span><br>
+            [oracle@server]$ sqlplus sys/wrong_pass as sysdba<br>
+            <span class="sql-comment">-- Connected. (OS auth used, password ignored)</span>
+        </div>
+        <div class="code-block">
+            <span class="sql-comment">-- Remote (network) connection with @, even from same machine</span><br>
+            [oracle@server]$ sqlplus sys/wrong_pass@orcl as sysdba<br>
+            <span class="sql-comment">-- ERROR: ORA-01017: invalid username/password; logon denied</span>
+        </div>
+        <p>The <code>@</code> forces a network connection, disabling OS authentication. The password must be correct (password file is used).</p>
+    </div>
+
+    <div class="section">
+        <h2>🔄 Recovering from a Lost Password File</h2>
+        <p>If the password file is lost or corrupted:</p>
+        <ol class="bullet-list">
+            <li><strong>Create a new password file</strong> using <code>orapwd</code>. You can set any temporary SYS password.</li>
+            <li><strong>Find users with admin privileges</strong> (they are still in the data dictionary).</li>
+            <div class="code-block">
+                <span class="sql-keyword">SELECT</span> username, sysdba, sysoper, sysbackup <span class="sql-keyword">FROM</span> v<span class="sql-string">$pwfile_users</span>;
+            </div>
+            <li><strong>Resynchronize:</strong> For each such user, revoke and re-grant the administrative privilege.</li>
+            <div class="code-block">
+                <span class="sql-keyword">REVOKE</span> sysbackup <span class="sql-keyword">FROM</span> sysuser1;<br>
+                <span class="sql-keyword">GRANT</span> sysbackup <span class="sql-keyword">TO</span> sysuser1;
+            </div>
+            <p>This action writes the user's current password (from the dictionary) into the new password file.</p>
+        </ol>
+        <p><strong>Does not affect</strong> OS-authenticated users.</p>
+    </div>
+
+    <div class="section">
+        <h2>🔒 Protecting the Password File</h2>
+        <p>Default permissions (Linux):</p>
+        <div class="code-block">
+            -rw------- 1 oracle oinstall 7680 Mar 10 15:22 orapworcl
+        </div>
+        <p>Only the Oracle software owner (and root) can read/write. Do not change these permissions.</p>
+    </div>
+
+    <div class="footer-note">
+        <p>📚 End of Authentication Lectures. Next up: putting it into practice.</p>
+    </div>
+
+</body>
+</html>

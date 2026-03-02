@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Oracle Data Guard: Physical Standby Architecture & RMAN-08137</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f1f5f9;
+        }
+        h1 {
+            color: #991b1b;
+            border-bottom: 4px solid #b91c1c;
+            padding-bottom: 10px;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h2 {
+            color: #0f3b5e;
+            border-left: 8px solid #2563eb;
+            padding-left: 16px;
+            margin: 30px 0 20px;
+        }
+        h3 {
+            color: #075985;
+            margin: 25px 0 10px;
+        }
+        .section {
+            background: white;
+            border-radius: 24px;
+            padding: 24px 28px;
+            margin-bottom: 36px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .architecture-container {
+            background: #0b1e33;
+            border-radius: 32px;
+            padding: 30px 20px;
+            margin: 30px 0;
+            overflow-x: auto;
+            box-shadow: inset 0 0 0 2px #2d3a4f;
+        }
+        .data-guard-svg {
+            min-width: 1050px;
+            background: transparent;
+        }
+        .process-tag {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            fill: #facc15;
+            font-size: 13px;
+            text-anchor: middle;
+        }
+        .file-tag {
+            font-family: 'Courier New', monospace;
+            fill: #6ee7b7;
+            font-size: 12px;
+            text-anchor: middle;
+            font-weight: 500;
+        }
+        .compartment {
+            fill: #1e3a5f;
+            stroke: #4895ef;
+            stroke-width: 2;
+            rx: 12;
+            ry: 12;
+        }
+        .server-line {
+            stroke: #f59e0b;
+            stroke-width: 3;
+            stroke-dasharray: 8 6;
+        }
+        .arrow {
+            stroke: #94a3b8;
+            stroke-width: 2;
+            marker-end: url(#arrowHead);
+        }
+        .highlight-arrow {
+            stroke: #fbbf24;
+            stroke-width: 3;
+            marker-end: url(#arrowHeadGold);
+        }
+        .code-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 18px 22px;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            border: 1px solid #334155;
+            margin: 20px 0;
+        }
+        .sql-keyword { color: #ff9f7c; font-weight: 600; }
+        .sql-comment { color: #7b8c9e; font-style: italic; }
+        .note {
+            background: #e6f7ff;
+            border-left: 8px solid #0284c7;
+            padding: 18px 24px;
+            border-radius: 16px;
+            margin: 24px 0;
+        }
+        .warning {
+            background: #fff9e6;
+            border-left: 8px solid #eab308;
+            padding: 18px 24px;
+            border-radius: 16px;
+            margin: 24px 0;
+        }
+        .error-block {
+            background: #fee2e2;
+            border-left: 8px solid #b91c1c;
+            padding: 18px 24px;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            margin: 24px 0;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 20px 0;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 18px 20px;
+            border: 1px solid #cbd5e1;
+        }
+        .card h4 { margin-top: 0; color: #155e75; }
+        .glossary-term {
+            background: #2d3c4b;
+            color: #facc15;
+            padding: 3px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        hr { border: 1px solid #d1d5db; margin: 36px 0; }
+        .footer {
+            text-align: center;
+            color: #4b5563;
+            margin-top: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Oracle Data Guard · Physical Standby Deep Dive</h1>
+    
+    <!-- ========== ARCHITECTURE SECTION ========== -->
+    <div class="section">
+        <h2>📐 Physical standby architecture – component flow</h2>
+        <p><span class="glossary-term">LNS</span> (Log Network Server) · <span class="glossary-term">RFS</span> (Remote File/Fetch Service) · <span class="glossary-term">MRP</span> (Managed Recovery Process) · <span class="glossary-term">SRL</span> (Standby Redo Logs)</p>
+
+        <div class="architecture-container">
+            <!-- SVG diagram – manually drawn with clear boxes and arrows -->
+            <svg class="data-guard-svg" viewBox="0 0 1150 500" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <marker id="arrowHead" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+                        <polygon points="0 0, 10 5, 0 10" fill="#94a3b8" />
+                    </marker>
+                    <marker id="arrowHeadGold" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
+                        <polygon points="0 0, 10 5, 0 10" fill="#fbbf24" />
+                    </marker>
+                </defs>
+
+                <!-- background separation: primary vs standby -->
+                <line x1="570" y1="40" x2="570" y2="420" stroke="#f59e0b" stroke-width="4" stroke-dasharray="10 10" />
+                <text x="400" y="30" fill="#e2e8f0" font-weight="bold" font-size="18">PRIMARY SERVER</text>
+                <text x="750" y="30" fill="#e2e8f0" font-weight="bold" font-size="18">STANDBY SERVER</text>
+
+                <!-- primary instance background -->
+                <rect x="40" y="60" width="430" height="260" fill="#1e293b" stroke="#2563eb" stroke-width="2" rx="20" ry="20" />
+                <text x="70" y="100" fill="#94a3b8" font-size="20" font-weight="600">PRIMARY DATABASE</text>
+
+                <!-- redo log buffer -->
+                <rect x="80" y="150" width="160" height="50" fill="#0f172a" stroke="#60a5fa" rx="8" ry="8" />
+                <text x="140" y="180" fill="#b0c4de" font-size="14">REDO LOG BUFFER</text>
+
+                <!-- LGWR -->
+                <rect x="280" y="150" width="70" height="40" fill="#312e81" stroke="#a78bfa" rx="10" ry="10" />
+                <text x="295" y="175" fill="#c7d2fe" font-weight="bold">LGWR</text>
+
+                <!-- LNS -->
+                <rect x="390" y="150" width="70" height="40" fill="#78350f" stroke="#fbbf24" rx="10" ry="10" />
+                <text x="402" y="175" fill="#fde68a" font-weight="bold">LNS</text>
+
+                <!-- online redo logs -->
+                <rect x="110" y="240" width="150" height="45" fill="#1e3a5f" stroke="#3b82f6" rx="8" ry="8" />
+                <text x="145" y="268" fill="#9ab7f0">ONLINE REDO</text>
+
+                <!-- ARC0 -->
+                <rect x="280" y="240" width="70" height="40" fill="#374151" stroke="#9ca3af" rx="8" ry="8" />
+                <text x="295" y="265" fill="#d1d5db">ARCn</text>
+
+                <!-- archive logs -->
+                <rect x="110" y="310" width="150" height="40" fill="#1e293b" stroke="#34d399" rx="8" ry="8" />
+                <text x="140" y="337" fill="#6ee7b7">ARCHIVELOGS</text>
+
+                <!-- standby side RFS + SRL + MRP -->
+                <rect x="670" y="150" width="90" height="50" fill="#14532d" stroke="#4ade80" rx="12" ry="12" />
+                <text x="687" y="180" fill="#bbf7d0" font-weight="bold">RFS</text>
+
+                <rect x="800" y="140" width="150" height="45" fill="#2d3748" stroke="#f87171" rx="8" ry="8" />
+                <text x="840" y="170" fill="#fecaca">STANDBY REDO</text>
+                <text x="840" y="185" fill="#fecaca" font-size="11">(SRL)</text>
+
+                <rect x="800" y="220" width="150" height="40" fill="#312e81" stroke="#c084fc" rx="8" ry="8" />
+                <text x="843" y="248" fill="#e9d5ff">MRP</text>
+
+                <!-- standby database representation -->
+                <rect x="670" y="290" width="280" height="70" fill="#1e3a5f" stroke="#60a5fa" rx="16" ry="16" />
+                <text x="730" y="335" fill="#bfdbfe" font-size="20">STANDBY DB</text>
+
+                <!-- ARROWS -->
+                <!-- buffer -> LGWR (dashed) -->
+                <line x1="240" y1="175" x2="280" y2="170" stroke="#9ca3af" stroke-width="2" stroke-dasharray="4 3" marker-end="url(#arrowHead)" />
+                <!-- LGWR -> online redo -->
+                <line x1="315" y1="190" x2="200" y2="240" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowHead)" />
+                <!-- LGWR -> ARCn (dashed) -->
+                <line x1="315" y1="190" x2="315" y2="240" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrowHead)" />
+                <!-- ARCn -> archive logs -->
+                <line x1="280" y1="260" x2="200" y2="310" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowHead)" />
+
+                <!-- LNS primary path (two possible routes: buffer or online redo) -->
+                <!-- 1. LNS from buffer (main) -->
+                <line x1="390" y1="170" x2="560" y2="170" stroke="#fbbf24" stroke-width="3" marker-end="url(#arrowHeadGold)" />
+                <!-- 2. LNS fallback from online redo (dashed gold) -->
+                <line x1="390" y1="180" x2="260" y2="250" stroke="#fbbf24" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#arrowHeadGold)" />
+                <text x="410" y="130" fill="#fcd34d" font-size="13">fallback if LNS behind</text>
+
+                <!-- network ship -->
+                <line x1="560" y1="170" x2="670" y2="175" stroke="#6ee7b7" stroke-width="4" marker-end="url(#arrowHead)" />
+
+                <!-- RFS -> SRL -->
+                <line x1="760" y1="175" x2="800" y2="165" stroke="#bbf7d0" stroke-width="3" marker-end="url(#arrowHead)" />
+
+                <!-- SRL -> MRP -->
+                <line x1="875" y1="185" x2="875" y2="220" stroke="#e9d5ff" stroke-width="3" marker-end="url(#arrowHead)" />
+
+                <!-- MRP -> standby DB apply -->
+                <line x1="875" y1="260" x2="800" y2="290" stroke="#c084fc" stroke-width="3" marker-end="url(#arrowHead)" />
+
+                <!-- Gap resolution arrow: RFS <-> primary archive (dotted) -->
+                <path d="M 670 200 Q 600 270, 500 330" stroke="#f87171" stroke-width="3" fill="transparent" stroke-dasharray="8 8" marker-end="url(#arrowHead)" />
+                <text x="500" y="380" fill="#fca5a5" font-size="13">GAP resolution: RFS pulls</text>
+                <text x="500" y="400" fill="#fca5a5" font-size="13">archivelogs from primary</text>
+
+                <!-- SRL cycle indication (tiny) -->
+                <circle cx="920" cy="150" r="8" fill="#374151" stroke="#fbbf24" stroke-width="2" />
+                <text x="930" y="135" fill="#ffd966" font-size="12">cyclic overwrite</text>
+
+                <!-- standby normal redo (separate) -->
+                <rect x="670" y="40" width="160" height="40" fill="#1f2937" stroke="#9ca3af" rx="6" ry="6" />
+                <text x="690" y="67" fill="#9ca3af" font-size="12">normal online redo (standby)</text>
+                <text x="690" y="82" fill="#9ca3af" font-size="10">(active only after role change)</text>
+            </svg>
+        </div>
+
+        <div class="comparison-grid">
+            <div class="card">
+                <h4>🔹 Primary side processes</h4>
+                <ul>
+                    <li><span class="glossary-term">LGWR</span> – writes redo to online redo logs (cyclic).</li>
+                    <li><span class="glossary-term">LNS</span> (log network server) – reads redo buffer (or falls back to online redo if behind) and ships over Oracle Net.</li>
+                    <li><span class="glossary-term">ARCn</span> – archiver, creates archivelogs, used by RFS for gap resolution.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>🔸 Standby side processes</h4>
+                <ul>
+                    <li><span class="glossary-term">RFS</span> (remote file/fetch service) – receives redo from LNS, writes to <strong>standby redo logs (SRL)</strong>. Can fetch missing archivelogs (gap resolution).</li>
+                    <li><span class="glossary-term">MRP</span> (managed recovery process) – applies redo from SRL to standby database.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="note">
+            ⚡ <strong>LNS fallback:</strong> If LNS cannot keep up with LGWR, it reads directly from online redo logs (dashed gold arrow).<br>
+            ⚡ <strong>Gap resolution:</strong> When standby detects missing logs, RFS contacts primary ARCn and pulls archivelogs automatically (red dotted line) — but if RMAN deleted them, manual intervention is needed.
+        </div>
+    </div>
+
+    <!-- ========== STANDBY REDO LOG DEEP DIVE ========= -->
+    <div class="section">
+        <h2>📚 Standby redo logs (SRL) vs. online redo logs</h2>
+        <div class="comparison-grid">
+            <div class="card">
+                <h4>📌 Online redo logs (primary & standby)</h4>
+                <ul>
+                    <li>Cyclic, written by LGWR.</li>
+                    <li>On standby: remain idle until role switch (standby becomes primary).</li>
+                    <li>Not used for media recovery while in standby role.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <h4>📌 Standby redo logs (SRL)</h4>
+                <ul>
+                    <li>Special logs created <code>ALTER DATABASE ADD STANDBY LOGFILE</code>.</li>
+                    <li>RFS writes incoming redo directly to SRL.</li>
+                    <li>MRP reads SRL to apply changes.</li>
+                    <li><strong>Must exist on both primary and standby for seamless role transition (switchover/failover).</strong></li>
+                </ul>
+            </div>
+        </div>
+        <div class="warning">
+            ⚠️ <strong>Interview tip:</strong> Many DBAs forget SRL on primary. After failover, the new primary (old standby) expects SRL on the demoted primary. Without SRL, you cannot perform a clean switchover.
+        </div>
+    </div>
+
+    <!-- ========== RMAN-08137 DEEP DIVE ========= -->
+    <hr>
+    <h1>⚠️ RMAN-08137: WARNING – archived log not deleted</h1>
+
+    <div class="section">
+        <div class="error-block">
+            <strong style="font-size: 1.4rem;">RMAN-08137: WARNING: archived log not deleted, needed for standby or upstream capture process</strong>
+        </div>
+        <p>RMAN refuses to delete archivelogs because they are still required by a Data Guard standby, GoldenGate extract, or an obsolete capture process. If ignored, archive log destinations fill up and databases may hang.</p>
+
+        <h3>🔍 Why does this happen (even without Data Guard/GoldenGate)?</h3>
+        <ul>
+            <li><strong>Orphaned capture processes</strong> remain registered in <code>DBA_CAPTURE</code> from old replication.</li>
+            <li><strong>Deletion policy</strong> set to <code>APPLIED ON STANDBY</code> or <code>SHIPPED TO STANDBY</code> but standby is down or lagging.</li>
+            <li><strong>Archive gap</strong> – standby missing logs; they are preserved automatically.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ METHOD 1: Check archive dependencies & policy</h2>
+        <div class="code-block">
+            <span class="sql-comment">-- 1. Detect any archive gap between primary and standby</span><br>
+            <span class="sql-keyword">SELECT</span> THREAD#, LOW_SEQUENCE#, HIGH_SEQUENCE# <span class="sql-keyword">FROM</span> V$ARCHIVE_GAP;<br><br>
+            <span class="sql-comment">-- 2. Which archived logs are still not deleted?</span><br>
+            <span class="sql-keyword">SELECT</span> SEQUENCE#, FIRST_TIME, DELETED <span class="sql-keyword">FROM</span> V$ARCHIVED_LOG <span class="sql-keyword">WHERE</span> DELETED='NO';<br><br>
+            <span class="sql-comment">-- 3. Show current RMAN archivelog deletion policy</span><br>
+            RMAN> <span class="sql-keyword">SHOW ALL</span>;
+        </div>
+        <p>If policy is too strict (e.g., <code>APPLIED ON STANDBY</code>), temporarily relax it:</p>
+        <div class="code-block">
+            RMAN> <span class="sql-keyword">CONFIGURE ARCHIVELOG DELETION POLICY TO SHIPPED TO STANDBY;</span><br>
+            RMAN> <span class="sql-keyword">DELETE NOPROMPT ARCHIVELOG ALL COMPLETED BEFORE 'SYSDATE-1';</span><br>
+            <span class="sql-comment">-- restore later</span><br>
+            RMAN> <span class="sql-keyword">CONFIGURE ARCHIVELOG DELETION POLICY TO NONE;</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔄 METHOD 2: Unused capture processes & standby lag</h2>
+        <div class="code-block">
+            <span class="sql-comment">-- List any capture processes (GoldenGate/Streams)</span><br>
+            <span class="sql-keyword">SELECT</span> CAPTURE_NAME, STATUS <span class="sql-keyword">FROM</span> DBA_CAPTURE;<br><br>
+            <span class="sql-comment">-- If unused, unregister (GoldenGate example)</span><br>
+            GGSCI> DBLOGIN USERIDALIAS &lt;alias&gt;<br>
+            GGSCI> UNREGISTER EXTRACT &lt;extract_name&gt; DATABASE<br><br>
+            <span class="sql-comment">-- Check Data Guard apply status</span><br>
+            <span class="sql-keyword">SELECT</span> PROCESS, STATUS, SEQUENCE# <span class="sql-keyword">FROM</span> V$MANAGED_STANDBY <span class="sql-keyword">WHERE</span> PROCESS IN ('MRP0','RFS');<br><br>
+            <span class="sql-comment">-- Verify logs applied on standby destinations</span><br>
+            <span class="sql-keyword">SELECT</span> DEST_ID, APPLIED_SCN <span class="sql-keyword">FROM</span> V$ARCHIVE_DEST_STATUS <span class="sql-keyword">WHERE</span> STATUS='VALID';
+        </div>
+        <p>If standby is lagging, wait until MRP catches up or troubleshoot network/recovery.</p>
+    </div>
+
+    <div class="section">
+        <h2>📈 METHOD 3: Proactive prevention</h2>
+        <ul>
+            <li><strong>Monitor free space</strong> in fast recovery area:<br>
+                <code>SELECT name, space_limit - space_used AS free_mb FROM V$RECOVERY_FILE_DEST;</code>
+            </li>
+            <li><strong>Set up alerts</strong> when apply lag exceeds threshold (e.g., using Enterprise Manager or custom scripts).</li>
+            <li><strong>Audit registered capture processes</strong> monthly – remove obsolete entries.</li>
+            <li><strong>In 11g/12c and later</strong>, use <code>CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON ALL STANDBY</code> after ensuring all standbys are healthy.</li>
+        </ul>
+        <div class="note">
+            📌 <strong>Best practice:</strong> Integrate archive deletion policy with backup retention; ensure it aligns with standby requirements. Use <code>BACKUP ... DELETE INPUT</code> carefully.
+        </div>
+    </div>
+
+    <!-- ========== GAP RESOLUTION & TROUBLESHOOTING ========= -->
+    <div class="section">
+        <h2>🧩 Gap resolution – when automation fails</h2>
+        <p><strong>RFS automatically fetches missing archivelogs</strong> from primary <em>if they still exist on disk.</em> But if RMAN or a backup job deleted the necessary archivelogs, you must intervene:</p>
+        <ol>
+            <li>Identify gap sequence:<br>
+                <code>SELECT * FROM V$ARCHIVE_GAP;</code>
+            </li>
+            <li>Restore missing logs from backup to primary (or copy from another source).</li>
+            <li>Register them via <code>ALTER DATABASE REGISTER LOGFILE '/path/...'</code>.</li>
+            <li>RFS will detect and ship them automatically.</li>
+        </ol>
+        <div class="warning">
+            ❗ <strong>Common cause of RMAN-08137:</strong> Archive logs are deleted on primary before being shipped/applied on standby. Tune backup scripts with:<br>
+            <code>BACKUP ARCHIVELOG ALL NOT BACKED UP 1 TIMES DELETE INPUT;</code> and ensure deletion policy includes <code>APPLIED ON STANDBY</code>.
+        </div>
+    </div>
+
+    <!-- ========== INTERVIEW CORNER ========= -->
+    <div class="section">
+        <h2>🎤 Interview / real-world Q&A</h2>
+        <ul>
+            <li><strong>Q: Does standby need its own redo logs? Why SRL?</strong><br> A: Yes, SRL separate from online redo. If standby is open (active Data Guard) it generates its own redo. SRL keeps incoming changes isolated.</li>
+            <li><strong>Q: What if I don't configure SRL on primary?</strong><br> A: Switchover will fail; primary cannot become a standby without SRL.</li>
+            <li><strong>Q: Why does RMAN-08137 appear even if I have no standby?</strong><br> A: Check for orphaned capture processes in DBA_CAPTURE, or a previously registered Data Guard broker configuration.</li>
+            <li><strong>Q: Can I force delete logs causing RMAN-08137?</strong><br> A: Only after confirming no replication/standby requires them, or after disabling the capture/unregistering. Use <code>DELETE ARCHIVELOG ... FORCE</code> as last resort, but risk breaking DR.</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        ⚡ Based on real Data Guard training · LNS · RFS · MRP · gap resolution · RMAN-08137 explained
+    </div>
+</body>
+</html>

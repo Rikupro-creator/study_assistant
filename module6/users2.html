@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Oracle Security: Users, Privileges & Least Privilege</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .lecture-title {
+            color: #c00;
+            border-bottom: 3px solid #c00;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-size: 2.2em;
+        }
+        .section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 5px solid #007bff;
+        }
+        .section h2 {
+            color: #0056b3;
+            margin-top: 0;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+        }
+        .section h3 {
+            color: #17a2b8;
+            margin: 15px 0 10px 0;
+        }
+        .note {
+            background-color: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .warning {
+            background-color: #f8d7da;
+            border-left: 5px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .tip {
+            background-color: #d1ecf1;
+            border-left: 5px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .code-block {
+            background-color: #272c34;
+            color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .sql-keyword {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        .sql-comment {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .sql-string {
+            color: #51cf66;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .comparison-table th {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            text-align: left;
+        }
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            vertical-align: top;
+        }
+        .comparison-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .bullet-list {
+            padding-left: 20px;
+        }
+        .bullet-list li {
+            margin-bottom: 8px;
+        }
+        .glossary-term {
+            font-weight: bold;
+            color: #d63384;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.75), rgba(0,0,0,0));
+            margin: 30px 0;
+        }
+        .footer-note {
+            text-align: center;
+            font-style: italic;
+            color: #6c757d;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LECTURE 1: MANAGING LOCAL AND COMMON USERS -->
+    <h1 class="lecture-title">🔐 Managing Local and Common Users</h1>
+    <div class="section">
+        <h2>🎯 Learning Objectives</h2>
+        <ul class="bullet-list">
+            <li>Describe the difference between Local and Common Users</li>
+            <li>Create common and local users</li>
+            <li>Grant privileges commonly and locally</li>
+            <li>Describe the difference between common and local roles</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📌 Core Concepts: Local vs. Common Users</h2>
+        <table class="comparison-table">
+            <tr>
+                <th>Local User</th>
+                <th>Common User</th>
+            </tr>
+            <tr>
+                <td>Defined at the PDB level. Not known outside its PDB.</td>
+                <td>Must be created in the Root container. Known by every existing and future PDB.</td>
+            </tr>
+            <tr>
+                <td>Can connect only to the PDB it belongs to.</td>
+                <td>Can connect to any container (Root or PDBs) if it has privileges.</td>
+            </tr>
+            <tr>
+                <td>Cannot be created in the root container.</td>
+                <td>Username must start with the value of <code>COMMON_USER_PREFIX</code> (default <strong>C##</strong>).</td>
+            </tr>
+            <tr>
+                <td>Local admin powers do not extend beyond its PDB.</td>
+                <td>Creating a common user alone gives it no privileges on any PDB.</td>
+            </tr>
+        </table>
+        <div class="tip">
+            <strong>💡 Recommendation:</strong> Keep the default <code>C##</code> prefix for common users. It makes distinguishing between common and local users easy and prevents conflicts when moving PDBs.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ Creating Users</h2>
+        <h3>👤 Create a Common User (from the Root)</h3>
+        <div class="code-block">
+            <span class="sql-keyword">CREATE USER</span> c##user_admin <span class="sql-keyword">IDENTIFIED BY</span> <span class="sql-string">"password"</span> <br>
+            <span class="sql-keyword">CONTAINER</span> = ALL;  <span class="sql-comment">-- ALL is optional here, as it's the only valid value for common users</span>
+        </div>
+
+        <h3>👤 Create a Local User (inside a PDB)</h3>
+        <div class="code-block">
+            <span class="sql-comment">-- First, switch to the target PDB</span><br>
+            <span class="sql-keyword">ALTER SESSION SET</span> CONTAINER = pdb1;<br><br>
+            <span class="sql-keyword">CREATE USER</span> app_user <span class="sql-keyword">IDENTIFIED BY</span> <span class="sql-string">"password"</span>;<br>
+            <span class="sql-comment">-- CONTAINER = CURRENT is the default</span>
+        </div>
+
+        <h3>🔍 View User Information</h3>
+        <div class="code-block">
+            <span class="sql-keyword">SELECT</span> username, common, con_id <span class="sql-keyword">FROM</span> cdb_users <span class="sql-keyword">WHERE</span> common = <span class="sql-string">'YES'</span>;
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔑 Granting Privileges</h2>
+        <h3>Local Grant (to a local user, inside a PDB)</h3>
+        <div class="code-block">
+            <span class="sql-keyword">GRANT</span> create session <span class="sql-keyword">TO</span> app_user; <span class="sql-comment">-- CONTAINER = CURRENT is default</span>
+        </div>
+
+        <h3>Local Grant to a Common User (inside a PDB)</h3>
+        <div class="code-block">
+            <span class="sql-keyword">GRANT</span> create table <span class="sql-keyword">TO</span> c##user_admin; <span class="sql-comment">-- This privilege applies only in the current PDB</span>
+        </div>
+
+        <h3>⭐ Common Grant (given to a common user, from the Root)</h3>
+        <div class="code-block">
+            <span class="sql-comment">-- Grant applies in ALL PDBs associated with the Root</span><br>
+            <span class="sql-keyword">GRANT</span> create any table <span class="sql-keyword">TO</span> c##user_admin <span class="sql-keyword">CONTAINER</span> = ALL;
+        </div>
+        <div class="note">
+            <strong>⚠️ Important:</strong> A common grant (CONTAINER = ALL) can only be given to a common user by a common user. It applies in all PDBs within the CDB.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎭 Common vs. Local Roles</h2>
+        <p>Nearly the same principles as users apply to roles.</p>
+        <table class="comparison-table">
+            <tr>
+                <th>Common Role</th>
+                <th>Local Role</th>
+            </tr>
+            <tr>
+                <td>Created in the Root. Name must start with <code>C##</code>.</td>
+                <td>Created in a PDB. Usable only within its PDB.</td>
+            </tr>
+            <tr>
+                <td>Known to all existing and future PDBs.</td>
+                <td>Cannot be created by local users.</td>
+            </tr>
+            <tr>
+                <td colspan="2" style="background-color: #e9ecef;"><strong>Best Practice:</strong> Common roles for common users; local roles for local users. Avoid granting local roles to common users.</td>
+            </tr>
+        </table>
+        <div class="code-block">
+            <span class="sql-comment">-- Create a common role</span><br>
+            <span class="sql-keyword">CREATE ROLE</span> c##admin_role <span class="sql-keyword">CONTAINER</span> = ALL;<br><br>
+            <span class="sql-comment">-- Create a local role (inside PDB)</span><br>
+            <span class="sql-keyword">CREATE ROLE</span> app_role;
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- LECTURE 2: QUERYING CONTAINER DATA OBJECTS -->
+    <h1 class="lecture-title">📊 Querying Container Data Objects</h1>
+    <div class="section">
+        <h2>🎯 Learning Objectives</h2>
+        <ul class="bullet-list">
+            <li>Understand querying container data objects</li>
+            <li>Set <code>CONTAINER_DATA</code> attributes for a common user</li>
+            <li>Obtain information about <code>CONTAINER_DATA</code> attributes</li>
+            <li>Remove <code>CONTAINER_DATA</code> attributes for a user</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🧩 What are Container Data Objects?</h2>
+        <p>These are views/tables (like <code>V$</code> views and <code>CDB_</code> views) that contain data from multiple containers. They always include the <code>CON_ID</code> column to identify the source container.</p>
+        <ul class="bullet-list">
+            <li><span class="glossary-term">CON_ID = 0</span>: Information about the entire CDB</li>
+            <li><span class="glossary-term">CON_ID = 1</span>: Root container</li>
+            <li><span class="glossary-term">CON_ID = 2</span>: Seed container (PDB$SEED)</li>
+            <li><span class="glossary-term">CON_ID >= 3</span>: User-created PDBs</li>
+        </ul>
+        <div class="code-block">
+            <span class="sql-comment">-- Find all container data objects</span><br>
+            <span class="sql-keyword">SELECT</span> owner, view_name <span class="sql-keyword">FROM</span> cdb_views <span class="sql-keyword">WHERE</span> container_data = <span class="sql-string">'YES'</span>;
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Default Visibility & the CONTAINER_DATA Attribute</h2>
+        <p>By default, a common user (non-Oracle maintained) querying a container data object from the Root sees only the data of the <strong>current container</strong>. This is controlled by the <code>CONTAINER_DATA</code> attribute.</p>
+        <p><strong>Oracle maintained users (SYS, SYSTEM)</strong> see all containers by default.</p>
+
+        <h3>⚙️ Setting CONTAINER_DATA</h3>
+        <div class="code-block">
+            <span class="sql-comment">-- Allow a user to see data for ALL containers</span><br>
+            <span class="sql-keyword">ALTER USER</span> c##user_admin <span class="sql-keyword">SET</span> CONTAINER_DATA = ALL;<br><br>
+            <span class="sql-comment">-- Restrict to specific containers (Root and PDB1)</span><br>
+            <span class="sql-keyword">ALTER USER</span> c##user_admin <span class="sql-keyword">SET</span> CONTAINER_DATA = (CDB<span class="sql-string">$ROOT</span>, PDB1);<br><br>
+            <span class="sql-comment">-- Add a PDB to the list</span><br>
+            <span class="sql-keyword">ALTER USER</span> c##user_admin <span class="sql-keyword">ADD</span> CONTAINER_DATA = (PDB2);<br><br>
+            <span class="sql-comment">-- Remove a PDB from the list</span><br>
+            <span class="sql-keyword">ALTER USER</span> c##user_admin <span class="sql-keyword">REMOVE</span> CONTAINER_DATA = (PDB1);
+        </div>
+        <div class="warning">
+            <strong>⚠️ SET vs. ADD/REMOVE:</strong> Using <code>SET</code> overwrites the entire list. Use <code>ADD</code> or <code>REMOVE</code> to modify it without losing existing settings.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 Object-Level Container Data</h2>
+        <p>You can restrict visibility to specific objects using the <code>FOR</code> clause.</p>
+        <div class="code-block">
+            <span class="sql-comment">-- Allow c##user_admin to see only SESSION info for Root and PDB1</span><br>
+            <span class="sql-keyword">ALTER USER</span> c##user_admin <span class="sql-keyword">SET</span> CONTAINER_DATA = (CDB<span class="sql-string">$ROOT</span>, PDB1) <span class="sql-keyword">FOR</span> sys.V_<span class="sql-string">$SESSION</span>;
+        </div>
+        <p><span class="glossary-term">V_$SESSION</span> is the internal object; <code>V$SESSION</code> is a synonym.</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 Viewing CONTAINER_DATA Settings</h2>
+        <div class="code-block">
+            <span class="sql-keyword">SELECT</span> username, owner, object_name, all_containers, container_name <br>
+            <span class="sql-keyword">FROM</span> cdb_container_data;
+        </div>
+        <p>This view shows which users have custom container data settings, for which objects, and which specific containers are included.</p>
+    </div>
+
+    <hr>
+
+    <!-- LECTURE 3: PRINCIPLE OF LEAST PRIVILEGE -->
+    <h1 class="lecture-title">🛡️ Principle of Least Privilege</h1>
+    <div class="section">
+        <h2>🎯 Learning Objective</h2>
+        <ul class="bullet-list">
+            <li>Understand applying the Principle of Least Privileges in Oracle databases</li>
+        </ul>
+        <p><strong>Core Idea:</strong> Grant users only the minimum privileges necessary to perform their job. This minimizes security risks.</p>
+    </div>
+
+    <div class="section">
+        <h2>📜 Oracle's Recommended Tips</h2>
+        <ol class="bullet-list">
+            <li><strong>Protect Data Dictionary:</strong> Keep <code>07_DICTIONARY_ACCESSIBILITY</code> = <code>FALSE</code> (default). This prevents users with <code>ANY TABLE</code> privileges from modifying dictionary tables.</li>
+            <li><strong>Restrict UTL Packages:</strong> Do not grant <code>EXECUTE</code> on <code>UTL_SMTP</code>, <code>UTL_TCP</code>, <code>UTL_HTTP</code>, <code>UTL_FILE</code> to <code>PUBLIC</code>. Grant to specific roles instead.</li>
+            <li><strong>Secure Directory Objects:</strong> Be very cautious when granting access to OS directories via directory objects. Grant only on a business need basis.</li>
+            <li><strong>Limit Admin Privileges:</strong> Never grant <code>DBA</code> role to application accounts. Grant only the specific privileges the app needs.</li>
+            <li><strong>Remote Authentication:</strong> Keep <code>REMOTE_OS_AUTHENT</code> = <code>FALSE</code> (default). Change only if absolutely required.</li>
+            <li><strong>Audit Critical Ops:</strong> Set <code>AUDIT_SYS_OPERATIONS</code> = <code>TRUE</code> to audit top-level operations.</li>
+            <li><strong>Avoid Public DB Links:</strong> Discourage the use of public database links. Prefer private links.</li>
+            <li><strong>Document Everything:</strong> Any grant/revoke workflow should be documented, approved, and every action recorded for evidence.</li>
+        </ol>
+        <div class="note">
+            <strong>📝 Note:</strong> These are guidelines, not strict procedures, but following them greatly enhances security.
+        </div>
+    </div>
+
+    <hr>
+
+    <!-- LECTURE 4: ADMINISTRATIVE ACCOUNTS AND PRIVILEGES -->
+    <h1 class="lecture-title">👑 Administrative Accounts and Privileges</h1>
+    <div class="section">
+        <h2>🎯 Learning Objectives</h2>
+        <ul class="bullet-list">
+            <li>Describe the administrative accounts and privileges</li>
+            <li>Describe the difference between SYSDBA and SYSOPER privileges</li>
+            <li>Describe the difference between SYS and SYSTEM accounts</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🧑‍💼 Administrative Accounts</h2>
+        <table class="comparison-table">
+            <tr>
+                <th>Account</th>
+                <th>Privilege Keyword</th>
+                <th>Primary Use</th>
+            </tr>
+            <tr>
+                <td><strong>SYS</strong></td>
+                <td>SYSDBA</td>
+                <td>Super user. Owns the data dictionary. Can start up/shut down. Password in password file only (12.2+).</td>
+            </tr>
+            <tr>
+                <td><strong>SYSTEM</strong></td>
+                <td>-</td>
+                <td>DBA role, but <strong>cannot</strong> start up/shut down. Password in data dictionary. Cannot connect if instance is not open.</td>
+            </tr>
+            <tr>
+                <td><strong>SYSBACKUP</strong></td>
+                <td>SYSBACKUP</td>
+                <td>For backup and recovery operations.</td>
+            </tr>
+            <tr>
+                <td><strong>SYSDG</strong></td>
+                <td>SYSDG</td>
+                <td>For Data Guard operations.</td>
+            </tr>
+            <tr>
+                <td><strong>SYSKM</strong></td>
+                <td>SYSKM</td>
+                <td>For TDE keystore management.</td>
+            </tr>
+            <tr>
+                <td><strong>SYSRAC</strong></td>
+                <td>SYSRAC</td>
+                <td>For RAC (Clusterware) management.</td>
+            </tr>
+        </table>
+        <div class="tip">
+            <strong>🔑 Key Point:</strong> Except for SYSTEM, administrative accounts require the corresponding keyword (e.g., <code>AS SYSDBA</code>, <code>AS SYSBACKUP</code>) when connecting. Their passwords are stored in the password file.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⚔️ SYSDBA vs. SYSOPER</h2>
+        <table class="comparison-table">
+            <tr>
+                <th>SYSDBA</th>
+                <th>SYSOPER</th>
+            </tr>
+            <tr>
+                <td>Full administrative power. Can grant/revoke any admin privilege.</td>
+                <td>Basic operational tasks (startup, shutdown, backup, recover). <strong>Cannot</strong> view user data. <strong>Cannot</strong> grant/revoke privileges.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Both allow access even when the database is not open. Both require a password file.</td>
+            </tr>
+        </table>
+        <div class="code-block">
+            <span class="sql-comment">-- Granting SYSDBA to a user</span><br>
+            <span class="sql-keyword">GRANT</span> sysdba <span class="sql-keyword">TO</span> scott;
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧑‍⚖️ Default Schema for Admin Privileges</h2>
+        <p>When connecting with an admin privilege, your <strong>current schema</strong> changes, which is important for auditing.</p>
+        <table class="comparison-table">
+            <tr>
+                <th>Connect As...</th>
+                <th>Current Schema Becomes...</th>
+            </tr>
+            <tr>
+                <td>SYSDBA</td>
+                <td>SYS</td>
+            </tr>
+            <tr>
+                <td>SYSOPER</td>
+                <td>PUBLIC</td>
+            </tr>
+            <tr>
+                <td>SYSBACKUP</td>
+                <td>SYS</td>
+            </tr>
+            <tr>
+                <td>Normal User</td>
+                <td>The user itself (e.g., SCOTT)</td>
+            </tr>
+        </table>
+        <div class="warning">
+            <strong>⚠️ Audit Implication:</strong> If user <code>c##adam</code> connects AS SYSDBA, all actions are recorded as being done by <code>SYS</code>, not <code>c##adam</code>.
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🧑‍🤝‍🧑 SYS vs. SYSTEM: The Difference</h2>
+        <table class="comparison-table">
+            <tr>
+                <th>Feature</th>
+                <th>SYS</th>
+                <th>SYSTEM</th>
+            </tr>
+            <tr>
+                <td>DBA Role</td>
+                <td>Yes</td>
+                <td>Yes</td>
+            </tr>
+            <tr>
+                <td>Owns Data Dictionary</td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td>Can STARTUP/SHUTDOWN</td>
+                <td>✅ Yes (via SYSDBA)</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td>Password Storage</td>
+                <td>Password File (only)</td>
+                <td>Data Dictionary</td>
+            </tr>
+            <tr>
+                <td>Login when instance is in MOUNT state</td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>👤 Best Practice: Separate Admin and App Accounts</h2>
+        <p>If a user needs both application privileges and administrative privileges, create <strong>two separate accounts</strong> for them. Do not grant admin privileges to the application account.</p>
+        <div class="note">
+            <strong>Example:</strong> User 'Scott' manages application roles via 'scott_app' and performs backups via 'scott_backup' (granted SYSBACKUP). This follows least privilege and improves audit clarity.
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <p>Lecture notes compiled from Oracle Database Security training. Always follow documented, approved workflows for grants and privilege changes.</p>
+    </div>
+
+</body>
+</html>
