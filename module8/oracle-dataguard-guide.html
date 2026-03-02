@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle Data Guard & RMAN-08137 Complete Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Source+Code+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --secondary: #0095ff;
+            --accent: #00ffaa;
+            --dark: #0a1929;
+            --darker: #020c1b;
+            --mid: #1a2332;
+            --light: #e3f2fd;
+            --code-bg: #0d1b2a;
+            --warning: #ffa726;
+            --error: #ef5350;
+            --success: #66bb6a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Code Pro', monospace;
+            background: var(--darker);
+            color: var(--light);
+            line-height: 1.8;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 212, 255, 0.03) 2px, rgba(0, 212, 255, 0.03) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0, 212, 255, 0.03) 2px, rgba(0, 212, 255, 0.03) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            text-align: center;
+            padding: 80px 40px;
+            background: linear-gradient(135deg, rgba(0, 149, 255, 0.2) 0%, rgba(0, 212, 255, 0.1) 100%);
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            margin-bottom: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent), var(--primary));
+            background-size: 400% 400%;
+            animation: borderGlow 8s ease infinite;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .version-tag {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 10px 25px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .section {
+            background: linear-gradient(135deg, rgba(26, 35, 50, 0.8) 0%, rgba(10, 25, 41, 0.9) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 2px;
+            padding: 45px;
+            margin-bottom: 40px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--accent));
+        }
+
+        .section:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.2);
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        h2::before {
+            content: '//';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            margin: 35px 0 20px;
+            color: var(--accent);
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.3rem;
+            margin: 25px 0 15px;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .architecture-box {
+            background: var(--code-bg);
+            border: 2px solid var(--primary);
+            border-radius: 4px;
+            padding: 40px;
+            margin: 35px 0;
+            position: relative;
+            font-family: 'Source Code Pro', monospace;
+        }
+
+        .architecture-box::before {
+            content: 'ARCHITECTURE DIAGRAM';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .flow-box {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 149, 255, 0.05) 100%);
+            border: 1px solid var(--primary);
+            padding: 25px;
+            border-radius: 2px;
+            min-width: 180px;
+            text-align: center;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .flow-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .flow-box strong {
+            display: block;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .flow-arrow {
+            color: var(--primary);
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin: 35px 0;
+        }
+
+        .card {
+            background: var(--code-bg);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-left: 4px solid var(--primary);
+            padding: 30px;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .card:hover::before {
+            width: 100%;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .card h4 {
+            color: var(--primary);
+            margin-top: 0;
+        }
+
+        .card p {
+            color: rgba(227, 242, 253, 0.85);
+            font-size: 0.95rem;
+        }
+
+        code {
+            font-family: 'Source Code Pro', monospace;
+            background: var(--code-bg);
+            padding: 4px 10px;
+            border-radius: 2px;
+            color: var(--accent);
+            font-size: 0.9em;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--primary);
+            border-radius: 2px;
+            padding: 30px;
+            overflow-x: auto;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        pre::before {
+            content: '> COMMAND';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--accent);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--light);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            border: none;
+        }
+
+        .process-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            margin: 5px;
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(255, 167, 38, 0.1) 0%, rgba(255, 167, 38, 0.05) 100%);
+            border: 1px solid var(--warning);
+            border-left: 4px solid var(--warning);
+            padding: 25px;
+            border-radius: 2px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .warning-box::before {
+            content: '⚠ WARNING';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--warning);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        .error-box {
+            background: linear-gradient(135deg, rgba(239, 83, 80, 0.1) 0%, rgba(239, 83, 80, 0.05) 100%);
+            border: 1px solid var(--error);
+            border-left: 4px solid var(--error);
+            padding: 25px;
+            border-radius: 2px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .error-box::before {
+            content: '✕ ERROR';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--error);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%);
+            border: 1px solid var(--primary);
+            border-left: 4px solid var(--primary);
+            padding: 25px;
+            border-radius: 2px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .info-box::before {
+            content: 'ℹ INFO';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--primary);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        .success-box {
+            background: linear-gradient(135deg, rgba(102, 187, 106, 0.1) 0%, rgba(102, 187, 106, 0.05) 100%);
+            border: 1px solid var(--success);
+            border-left: 4px solid var(--success);
+            padding: 25px;
+            border-radius: 2px;
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .success-box::before {
+            content: '✓ SUCCESS';
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--darker);
+            padding: 0 10px;
+            color: var(--success);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: var(--code-bg);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        th {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 149, 255, 0.1) 100%);
+            color: var(--primary);
+            padding: 18px;
+            text-align: left;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        td {
+            padding: 18px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            color: var(--light);
+        }
+
+        tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 18px 18px 18px 45px;
+            margin: 15px 0;
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.1) 0%, transparent 100%);
+            border-left: 3px solid var(--primary);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .feature-list li:hover {
+            background: linear-gradient(90deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 212, 255, 0.05) 100%);
+            transform: translateX(10px);
+        }
+
+        .feature-list li::before {
+            content: '>';
+            position: absolute;
+            left: 18px;
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .step-container {
+            counter-reset: step-counter;
+        }
+
+        .step {
+            background: var(--code-bg);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 2px;
+            padding: 30px 30px 30px 80px;
+            margin: 25px 0;
+            position: relative;
+            counter-increment: step-counter;
+        }
+
+        .step::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--darker);
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 50px 20px;
+            margin-top: 60px;
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            color: rgba(227, 242, 253, 0.5);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 1.8rem; }
+            .section { padding: 30px 20px; }
+            .grid { grid-template-columns: 1fr; }
+            .flow-diagram { flex-direction: column; }
+        }
+
+        .animate-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideUp 0.8s ease forwards;
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section:nth-child(1) { animation-delay: 0.1s; }
+        .section:nth-child(2) { animation-delay: 0.2s; }
+        .section:nth-child(3) { animation-delay: 0.3s; }
+        .section:nth-child(4) { animation-delay: 0.4s; }
+        .section:nth-child(5) { animation-delay: 0.5s; }
+        .section:nth-child(6) { animation-delay: 0.6s; }
+        .section:nth-child(7) { animation-delay: 0.7s; }
+        .section:nth-child(8) { animation-delay: 0.8s; }
+        .section:nth-child(9) { animation-delay: 0.9s; }
+        .section:nth-child(10) { animation-delay: 1.0s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Data Guard</h1>
+            <p class="subtitle">ARCHITECTURE & TROUBLESHOOTING GUIDE</p>
+            <div class="version-tag">ORACLE 11G+ | PHYSICAL STANDBY</div>
+        </header>
+
+        <section class="section animate-in">
+            <h2>Physical Standby Architecture</h2>
+            
+            <p>Oracle Data Guard ensures high availability and disaster recovery through physical standby databases. Understanding the core architecture is essential for DBAs managing mission-critical systems.</p>
+
+            <div class="architecture-box">
+                <h3 style="margin-top: 0; text-align: center;">Primary → Standby Data Flow</h3>
+                
+                <div class="flow-diagram">
+                    <div class="flow-box">
+                        <strong>REDO LOG BUFFER</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">Primary Instance Memory</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">
+                        <strong>LNS</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">Log Network Service</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">
+                        <strong>NETWORK</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">Oracle Net Services</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">
+                        <strong>RFS</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">Remote File/Fetch Service</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">
+                        <strong>STANDBY REDO LOGS</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">SRL Files</p>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">
+                        <strong>MRP</strong>
+                        <p style="font-size: 0.85rem; margin-top: 10px;">Managed Recovery Process</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Key Components</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>Redo Log Buffer</h4>
+                    <p>Memory area in the primary instance where redo entries are initially written before being flushed to disk or shipped to standby.</p>
+                </div>
+                <div class="card">
+                    <h4>Log Writer (LGWR)</h4>
+                    <p>Background process that flushes redo log entries from the buffer to online redo log files in cyclic order.</p>
+                </div>
+                <div class="card">
+                    <h4>Archiver (ARC)</h4>
+                    <p>Copies filled online redo log files to archive log destination for backup and recovery purposes.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Log Shipping Service (LNS)</h2>
+            
+            <p>The <span class="process-badge">LNS</span> (Log Network Service / Log Writer Network Service) is the critical component responsible for shipping redo data from primary to standby.</p>
+
+            <h3>Primary Responsibilities</h3>
+            <ul class="feature-list">
+                <li><strong>Read Redo Log Buffer:</strong> Directly reads redo entries from the primary database's redo log buffer</li>
+                <li><strong>Network Transmission:</strong> Ships redo data over Oracle Net Services to the standby database</li>
+                <li><strong>Adaptive Behavior:</strong> Can switch to reading from online redo log files if buffer read falls behind</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>Performance Consideration:</strong> During high transaction volumes, if LNS cannot keep pace with LGWR, it automatically switches to reading from online redo log files instead of the redo log buffer. This ensures no data loss while maintaining performance.
+            </div>
+
+            <div class="info-box">
+                <strong>Network Configuration:</strong> LNS requires properly configured Oracle Net Services between primary and standby servers—identical to client/server networking setup but between database instances.
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Remote File Service (RFS)</h2>
+            
+            <p>The <span class="process-badge">RFS</span> (Remote File Service / Remote Fetch Service) operates on the standby server and handles incoming redo data.</p>
+
+            <h3>Core Functions</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>🔄 Receive Redo Data</h4>
+                    <p>Accepts redo log entries transmitted by LNS from the primary database over the network.</p>
+                </div>
+                <div class="card">
+                    <h4>📝 Write to SRL</h4>
+                    <p>Writes received redo entries to Standby Redo Log (SRL) files on the standby database.</p>
+                </div>
+                <div class="card">
+                    <h4>🔍 Gap Detection</h4>
+                    <p>Automatically identifies sequence number gaps between primary and standby databases.</p>
+                </div>
+                <div class="card">
+                    <h4>🩹 Gap Resolution</h4>
+                    <p>Proactively fetches missing archive log files from the primary to resolve gaps automatically.</p>
+                </div>
+            </div>
+
+            <h3>Automatic Gap Resolution</h3>
+
+            <div class="step-container">
+                <div class="step">
+                    <strong>Gap Detection</strong>
+                    <p>RFS compares current standby sequence number with primary sequence number (e.g., Primary: 50, Standby: 25 = Gap of 25 sequences)</p>
+                </div>
+                <div class="step">
+                    <strong>Archive Fetch</strong>
+                    <p>RFS contacts the primary's ARC (Archiver) process and requests missing archive log files</p>
+                </div>
+                <div class="step">
+                    <strong>Transfer & Apply</strong>
+                    <p>Missing archives are transferred to standby, then MRP applies them to synchronize the databases</p>
+                </div>
+            </div>
+
+            <div class="error-box">
+                <strong>Manual Intervention Required:</strong> If RMAN has already backed up and deleted archive logs on the primary before they were shipped to standby, automatic gap resolution will fail. DBAs must manually restore and transfer the required archives.
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Standby Redo Logs (SRL)</h2>
+            
+            <p>Standby Redo Logs are special redo log files that exist separately from standard redo log files and play a crucial role in Data Guard architecture.</p>
+
+            <h3>SRL vs Standard Redo Logs</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Standard Redo Logs</th>
+                        <th>Standby Redo Logs (SRL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Purpose</strong></td>
+                        <td>Record current database operations</td>
+                        <td>Receive redo data from primary database</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Active When</strong></td>
+                        <td>Database is open and running</td>
+                        <td>Database is in standby mode receiving logs</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Written By</strong></td>
+                        <td>LGWR (Log Writer)</td>
+                        <td>RFS (Remote File Service)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Read By</strong></td>
+                        <td>ARC (for archiving)</td>
+                        <td>MRP (for recovery)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Configuration</strong></td>
+                        <td>Always present in all databases</td>
+                        <td>Must be manually configured for Data Guard</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <strong>Critical Configuration Requirement:</strong>
+                <p style="margin-top: 15px;">SRLs must be configured on BOTH primary and standby databases. This is essential for switchover and failover operations.</p>
+                <p style="margin-top: 10px;"><strong>Why?</strong> During role reversal (switchover/failover), the current primary becomes the new standby. Without SRLs on the original primary, it cannot function as a standby after the role change.</p>
+            </div>
+
+            <h3>When Standard Redo Logs Become Active</h3>
+
+            <div class="info-box">
+                <p>On a standby database, standard redo log files remain inactive while the database is in managed recovery mode (mount mode). They become active only when:</p>
+                <ul style="margin-top: 15px; margin-left: 20px;">
+                    <li style="margin: 8px 0;">The standby is opened for read/write operations</li>
+                    <li style="margin: 8px 0;">A switchover or failover promotes the standby to primary</li>
+                    <li style="margin: 8px 0;">The database role changes from standby to primary</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Managed Recovery Process (MRP)</h2>
+            
+            <p>The <span class="process-badge">MRP</span> (Managed Recovery Process) is the log apply service that keeps the standby database synchronized with the primary.</p>
+
+            <h3>How MRP Works</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>📖 Read SRL Files</h4>
+                    <p>Continuously reads redo entries from Standby Redo Log files as they are written by RFS.</p>
+                </div>
+                <div class="card">
+                    <h4>⚙️ Apply Changes</h4>
+                    <p>Applies the redo changes to the physical standby database, keeping it synchronized block-by-block.</p>
+                </div>
+                <div class="card">
+                    <h4>🔄 Continuous Operation</h4>
+                    <p>Runs continuously in the background while the standby database is in managed recovery mode.</p>
+                </div>
+                <div class="card">
+                    <h4>📊 Progress Tracking</h4>
+                    <p>Maintains metadata about applied sequences, enabling gap detection and synchronization monitoring.</p>
+                </div>
+            </div>
+
+            <div class="success-box">
+                <strong>Block-Level Replication:</strong> MRP ensures the standby database is an exact physical copy of the primary, replicating changes at the block level. This guarantees data consistency and enables fast failover capabilities.
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Failover & Switchover Requirements</h2>
+            
+            <p>Proper configuration is essential for successful role transitions in Data Guard environments.</p>
+
+            <h3>Critical Configuration Checklist</h3>
+
+            <ul class="feature-list">
+                <li><strong>SRL on Primary:</strong> Standby Redo Logs must be configured on the primary database</li>
+                <li><strong>SRL on Standby:</strong> Standby Redo Logs must be configured on the standby database</li>
+                <li><strong>Network Connectivity:</strong> Bidirectional Oracle Net Services must be configured and tested</li>
+                <li><strong>Archive Log Destination:</strong> LOG_ARCHIVE_DEST_n parameters must point to both local and remote destinations</li>
+                <li><strong>Parameter Files:</strong> Both databases need compatible initialization parameters</li>
+            </ul>
+
+            <div class="error-box">
+                <strong>Common Mistake:</strong>
+                <p style="margin-top: 15px;">Many DBAs configure SRLs only on the standby database, assuming they're only needed there. This prevents successful switchover/failover operations when the primary needs to become a standby.</p>
+                <p style="margin-top: 10px;"><strong>Impact:</strong> Without SRLs on the original primary, role reversal fails, potentially causing extended downtime during disaster recovery scenarios.</p>
+            </div>
+
+            <h3>What Happens During Switchover</h3>
+
+            <div class="step-container">
+                <div class="step">
+                    <strong>Primary → Standby Conversion</strong>
+                    <p>Original primary transitions to standby role. LNS stops, RFS starts accepting logs from new primary</p>
+                    <pre style="margin-top: 15px; padding: 15px;"><code>-- Primary becomes standby
+-- LGWR stops writing to standard redo logs
+-- RFS starts, writes to SRLs
+-- MRP begins applying received logs</code></pre>
+                </div>
+                <div class="step">
+                    <strong>Standby → Primary Conversion</strong>
+                    <p>Original standby promotes to primary role. MRP stops, LGWR activates standard redo logs</p>
+                    <pre style="margin-top: 15px; padding: 15px;"><code>-- Standby becomes primary
+-- MRP completes final log application
+-- Database opens READ WRITE
+-- LGWR activates standard redo logs
+-- LNS starts shipping to new standby</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>RMAN-08137 Error</h2>
+            
+            <div class="error-box">
+                <strong>Error Message:</strong>
+                <pre style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.3); border: 1px solid var(--error);"><code>RMAN-08137: WARNING: archived log not deleted, needed for 
+standby or upstream capture process</code></pre>
+            </div>
+
+            <p style="margin-top: 25px;">This warning appears when RMAN refuses to delete archive logs because they are still required by standby databases or capture processes like GoldenGate. If ignored, this can rapidly fill archive log storage and threaten database availability.</p>
+
+            <h3>Root Causes</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>📡 Standby Lag</h4>
+                    <p>Archive logs haven't been applied on standby database yet. Primary retains them until standby confirms application.</p>
+                </div>
+                <div class="card">
+                    <h4>🔄 GoldenGate/Streams</h4>
+                    <p>Upstream capture processes (GoldenGate Extract, Streams) still need these logs for replication.</p>
+                </div>
+                <div class="card">
+                    <h4>👻 Orphaned Processes</h4>
+                    <p>Registered capture processes remain in database metadata even after decommissioning, blocking deletion.</p>
+                </div>
+                <div class="card">
+                    <h4>⚙️ Policy Misconfiguration</h4>
+                    <p>Archive log deletion policy set too conservatively (waiting for APPLIED vs SHIPPED status).</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Diagnosing RMAN-08137</h2>
+            
+            <h3>Method 1: Check Archive Log Dependencies</h3>
+
+            <div class="step-container">
+                <div class="step">
+                    <strong>Check for Data Guard Gaps</strong>
+                    <pre><code>-- Identify missing sequences on standby
+SELECT THREAD#, LOW_SEQUENCE#, HIGH_SEQUENCE# 
+FROM V$ARCHIVE_GAP;</code></pre>
+                    <div class="info-box" style="margin-top: 15px;">
+                        <p><strong>Interpretation:</strong> Results show sequence number ranges missing on standby. These archives must stay on primary until gap resolves.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <strong>Review Retained Archives</strong>
+                    <pre><code>-- List all archives not yet deleted
+SELECT SEQUENCE#, FIRST_TIME, NEXT_TIME 
+FROM V$ARCHIVED_LOG 
+WHERE DELETED = 'NO' 
+ORDER BY SEQUENCE#;</code></pre>
+                    <div class="info-box" style="margin-top: 15px;">
+                        <p><strong>Action:</strong> Identify which files are held and when they were created. Cross-reference with V$ARCHIVE_GAP to determine dependency.</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <strong>Check Deletion Policy</strong>
+                    <pre><code>-- View current RMAN configuration
+RMAN> SHOW ALL;</code></pre>
+                    <div class="warning-box" style="margin-top: 15px;">
+                        <p><strong>Look for:</strong> <code>APPLIED ON STANDBY</code> or <code>SHIPPED TO STANDBY</code> policies. These keep archives until standby confirms receipt/application.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3>Temporary Policy Adjustment</h3>
+
+            <pre><code>-- Change to less restrictive policy (if safe)
+RMAN> CONFIGURE ARCHIVELOG DELETION POLICY TO SHIPPED TO STANDBY;
+
+-- Attempt deletion
+RMAN> DELETE NOPROMPT ARCHIVELOG ALL COMPLETED BEFORE 'SYSDATE-1';
+
+-- Restore original policy
+RMAN> CONFIGURE ARCHIVELOG DELETION POLICY TO APPLIED ON STANDBY;</code></pre>
+
+            <div class="error-box">
+                <strong>Caution:</strong> Never bypass deletion policies without verifying standbys and capture processes are healthy. Premature deletion can break replication or prevent point-in-time recovery.
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Method 2: Capture Processes & Standby Status</h2>
+
+            <h3>Check Registered Capture Processes</h3>
+
+            <pre><code>-- List all capture processes
+SELECT CAPTURE_NAME, STATUS FROM DBA_CAPTURE;</code></pre>
+
+            <div class="info-box">
+                <p><strong>Common Issue:</strong> Decommissioned GoldenGate extracts or Streams captures remain registered even after being stopped, continuing to block archive log deletion.</p>
+            </div>
+
+            <h3>Unregister Unused Captures (GoldenGate)</h3>
+
+            <pre><code>-- In GoldenGate GGSCI console
+GGSCI> DBLOGIN USERIDALIAS <alias>
+GGSCI> UNREGISTER EXTRACT <extract_name> DATABASE</code></pre>
+
+            <h3>Monitor Standby Apply Status</h3>
+
+            <pre><code>-- Check recovery processes on standby
+SELECT PROCESS, STATUS, THREAD#, SEQUENCE#, BLOCK#, BLOCKS 
+FROM V$MANAGED_STANDBY 
+WHERE PROCESS IN ('MRP0', 'RFS');</code></pre>
+
+            <div class="warning-box">
+                <p><strong>High Apply Lag:</strong> If MRP shows large sequence number differences from primary, standbys need time to catch up before archives can be safely deleted.</p>
+            </div>
+
+            <h3>Check Archive Destination Status</h3>
+
+            <pre><code>-- Verify standby synchronization
+SELECT DEST_ID AS "Dest", 
+       STATUS AS "Status", 
+       APPLIED_SCN AS "Applied SCN" 
+FROM V$ARCHIVE_DEST_STATUS 
+WHERE STATUS = 'VALID';</code></pre>
+
+            <div class="step-container" style="margin-top: 30px;">
+                <div class="step">
+                    <strong>Compare with Current SCN</strong>
+                    <pre><code>-- Get current primary SCN
+SELECT CURRENT_SCN FROM V$DATABASE;</code></pre>
+                    <p style="margin-top: 10px;">Large SCN differences indicate apply lag on standby destinations.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Method 3: Proactive Prevention</h2>
+            
+            <p>Prevent RMAN-08137 errors through continuous monitoring and automation rather than reactive troubleshooting.</p>
+
+            <h3>Beginner Level: Monitor Disk Space</h3>
+
+            <pre><code>-- Check recovery file destination space
+SELECT NAME AS "Archive Dest", 
+       SPACE_LIMIT - SPACE_USED AS "Free Space MB" 
+FROM V$RECOVERY_FILE_DEST;</code></pre>
+
+            <div class="success-box">
+                <p><strong>Set Alerts:</strong> Configure Enterprise Manager or custom scripts to alert when free space drops below 20% threshold.</p>
+            </div>
+
+            <h3>Intermediate Level: Automated Reporting</h3>
+
+            <pre><code>-- Daily report of un-applied sequences
+SELECT d.DEST_NAME, 
+       d.STATUS, 
+       l.SEQUENCE# AS "Last Applied",
+       (SELECT MAX(SEQUENCE#) FROM V$ARCHIVED_LOG) AS "Current",
+       (SELECT MAX(SEQUENCE#) FROM V$ARCHIVED_LOG) - l.SEQUENCE# AS "Gap"
+FROM V$ARCHIVE_DEST d
+LEFT JOIN V$ARCHIVED_LOG l ON d.DEST_ID = l.DEST_ID 
+                          AND l.APPLIED = 'YES'
+WHERE d.STATUS = 'VALID'
+ORDER BY d.DEST_ID;</code></pre>
+
+            <h3>Advanced Level: Automated Alerting</h3>
+
+            <ul class="feature-list">
+                <li><strong>Apply Lag Monitoring:</strong> Track MRP apply lag continuously, alert when exceeding thresholds</li>
+                <li><strong>Email/SMS Integration:</strong> Connect Oracle alerting to external monitoring tools for immediate notification</li>
+                <li><strong>Capture Process Audits:</strong> Schedule weekly reviews of DBA_CAPTURE to identify orphaned entries</li>
+                <li><strong>Archive Retention Metrics:</strong> Dashboard showing archive age, count, and storage consumption trends</li>
+                <li><strong>Automated Gap Resolution:</strong> Scripts to detect and resolve gaps before manual intervention needed</li>
+            </ul>
+
+            <div class="info-box">
+                <strong>Best Practice:</strong> Combine multiple monitoring layers. Disk space alerts catch immediate problems, while apply lag trends predict future issues before they become critical.
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Gap Resolution Scenarios</h2>
+
+            <h3>Scenario 1: Automatic Resolution (Happy Path)</h3>
+
+            <div class="success-box">
+                <p><strong>Condition:</strong> All required archive logs exist on primary after sequence 25</p>
+                <p style="margin-top: 10px;"><strong>Result:</strong> RFS automatically contacts ARC, fetches missing archives, and MRP applies them</p>
+            </div>
+
+            <h3>Scenario 2: RMAN Backup Conflict</h3>
+
+            <div class="error-box">
+                <p><strong>Problem:</strong> RMAN backed up and deleted archives 26-35 before they shipped to standby</p>
+                <p style="margin-top: 10px;"><strong>Resolution Required:</strong> Manual intervention needed</p>
+            </div>
+
+            <div class="step-container">
+                <div class="step">
+                    <strong>Restore Missing Archives</strong>
+                    <pre><code>-- On primary, restore archives from RMAN backup
+RMAN> RESTORE ARCHIVELOG FROM SEQUENCE 26 UNTIL SEQUENCE 35;</code></pre>
+                </div>
+                <div class="step">
+                    <strong>Manual Transfer</strong>
+                    <pre><code>-- Copy restored archives to standby
+$ scp arch_26_*.arc standby:/arch_dest/</code></pre>
+                </div>
+                <div class="step">
+                    <strong>Register & Apply</strong>
+                    <pre><code>-- On standby, register archives
+ALTER DATABASE REGISTER PHYSICAL LOGFILE '/arch_dest/arch_26_*.arc';
+
+-- Verify MRP picks them up
+SELECT SEQUENCE#, APPLIED FROM V$ARCHIVED_LOG 
+WHERE SEQUENCE# BETWEEN 26 AND 35;</code></pre>
+                </div>
+            </div>
+
+            <h3>Scenario 3: Network Issues</h3>
+
+            <div class="warning-box">
+                <p><strong>Symptoms:</strong> LNS errors, RFS connectivity failures, growing gap</p>
+                <p style="margin-top: 10px;"><strong>Actions:</strong></p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Test Oracle Net connectivity: <code>tnsping STANDBY_TNSALIAS</code></li>
+                    <li>Check listener status on standby: <code>lsnrctl status</code></li>
+                    <li>Review alert logs for ORA-12541, ORA-12170 errors</li>
+                    <li>Verify firewall rules allow database port traffic</li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="section animate-in">
+            <h2>Best Practices Summary</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>✅ Always Configure SRLs</h4>
+                    <p>Set up Standby Redo Logs on both primary and standby from day one, even if failover isn't immediately planned.</p>
+                </div>
+                <div class="card">
+                    <h4>✅ Monitor Apply Lag Daily</h4>
+                    <p>Check V$MANAGED_STANDBY and V$ARCHIVE_GAP daily. Address growing gaps before they become critical.</p>
+                </div>
+                <div class="card">
+                    <h4>✅ Right-Size Deletion Policies</h4>
+                    <p>Balance between "APPLIED" (safer) and "SHIPPED" (less storage) based on recovery objectives and disk capacity.</p>
+                </div>
+                <div class="card">
+                    <h4>✅ Test Switchover Regularly</h4>
+                    <p>Quarterly switchover tests validate configuration, train staff, and identify issues before real disasters.</p>
+                </div>
+                <div class="card">
+                    <h4>✅ Clean Up Captures</h4>
+                    <p>Audit DBA_CAPTURE quarterly. Unregister unused GoldenGate/Streams processes immediately after decommissioning.</p>
+                </div>
+                <div class="card">
+                    <h4>✅ Document Dependencies</h4>
+                    <p>Maintain runbook documenting all Data Guard destinations and capture processes consuming archives.</p>
+                </div>
+            </div>
+
+            <div class="info-box" style="margin-top: 40px;">
+                <p><strong>Remember:</strong> Most Data Guard issues stem from incomplete knowledge and missing queries. Master the diagnostic views (V$ARCHIVE_GAP, V$MANAGED_STANDBY, DBA_CAPTURE) and most problems become straightforward to solve.</p>
+            </div>
+        </section>
+
+        <footer>
+            <p>Oracle Data Guard & RMAN-08137 Complete Guide</p>
+            <p style="margin-top: 15px; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">
+                HIGH AVAILABILITY | DISASTER RECOVERY | ORACLE 11G+
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle ADR - Automatic Diagnostic Repository Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f44336;
+            --secondary: #ff5722;
+            --accent: #ffeb3b;
+            --dark: #1a1a2e;
+            --darker: #0f0f1e;
+            --light: #eef1f6;
+            --code-bg: #2d2d44;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --info: #2196f3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            margin-bottom: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(244, 67, 54, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 300;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 25px;
+            margin-top: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            border-color: var(--primary);
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 25px;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        h2::before {
+            content: '';
+            width: 6px;
+            height: 40px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
+        h3 {
+            font-size: 1.6rem;
+            margin: 30px 0 15px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .card {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-left-width: 8px;
+            transform: translateX(5px);
+        }
+
+        .card h4 {
+            font-size: 1.3rem;
+            margin-bottom: 12px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .card p {
+            color: rgba(238, 241, 246, 0.85);
+            font-size: 0.95rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--code-bg);
+            padding: 3px 8px;
+            border-radius: 5px;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        pre {
+            background: var(--code-bg);
+            border-radius: 12px;
+            padding: 25px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid var(--info);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .badge-critical { background: var(--primary); }
+        .badge-warning { background: var(--warning); }
+        .badge-info { background: var(--info); }
+        .badge-success { background: var(--success); }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 15px;
+            margin: 12px 0;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .feature-list li:hover {
+            background: rgba(244, 67, 54, 0.2);
+            transform: translateX(10px);
+        }
+
+        .feature-list li::before {
+            content: '▸';
+            color: var(--primary);
+            font-weight: bold;
+            margin-right: 12px;
+            font-size: 1.2em;
+        }
+
+        .diagram {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .diagram img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .command-box {
+            background: linear-gradient(135deg, var(--code-bg) 0%, rgba(45, 45, 68, 0.8) 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .command-box strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .info-box {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid var(--info);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.1);
+            border-left: 4px solid var(--warning);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .critical-box {
+            background: rgba(244, 67, 54, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: var(--code-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        tr:hover {
+            background: rgba(244, 67, 54, 0.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            margin-top: 50px;
+            border-top: 2px solid rgba(255,255,255,0.1);
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            h2 { font-size: 1.8rem; }
+            .section { padding: 25px; }
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .scroll-animation {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section:nth-child(1) { animation-delay: 0.1s; }
+        .section:nth-child(2) { animation-delay: 0.2s; }
+        .section:nth-child(3) { animation-delay: 0.3s; }
+        .section:nth-child(4) { animation-delay: 0.4s; }
+        .section:nth-child(5) { animation-delay: 0.5s; }
+        .section:nth-child(6) { animation-delay: 0.6s; }
+        .section:nth-child(7) { animation-delay: 0.7s; }
+        .section:nth-child(8) { animation-delay: 0.8s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Oracle ADR</h1>
+            <p class="subtitle">Automatic Diagnostic Repository - Complete Guide</p>
+            <span class="hero-tag">Oracle Database 11g and Above</span>
+        </header>
+
+        <section class="section scroll-animation">
+            <h2>What is Oracle ADR?</h2>
+            <p>The <span class="highlight">Automatic Diagnostic Repository (ADR)</span> is a centralized, file-based repository that stores diagnostic data outside of the database. This critical infrastructure component enables problem diagnosis even when the database instance is down.</p>
+            
+            <div class="info-box">
+                <strong>Key Point:</strong> ADR is NOT held inside an Oracle database schema - it's a file system-based repository that can be accessed independently of the database state.
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>🗂️ File-Based Storage</h4>
+                    <p>Stores diagnostic data in a structured file system hierarchy, separate from the database instance.</p>
+                </div>
+                <div class="card">
+                    <h4>🔍 Independent Access</h4>
+                    <p>Can diagnose issues even when the database instance is down or unavailable.</p>
+                </div>
+                <div class="card">
+                    <h4>🎯 Multi-Product Support</h4>
+                    <p>Used not only for Oracle Database but also for other Oracle products like ASM, Grid Infrastructure, and Oracle Net.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Fault Diagnosability Infrastructure (FDI)</h2>
+            <p>FDI is a comprehensive feature in Oracle Database that helps quickly diagnose and resolve faults. ADR is a key component of this infrastructure.</p>
+
+            <h3>FDI Components:</h3>
+            <ul class="feature-list">
+                <li><strong>Automatic Diagnostic Repository (ADR)</strong> - Centralized storage for all diagnostic data</li>
+                <li><strong>Alert Log File</strong> - Records important database messages and alerts</li>
+                <li><strong>Trace Files</strong> - Detailed technical information about errors and operations</li>
+                <li><strong>Dump Files</strong> - Stack traces, memory dumps, and diagnostic data</li>
+                <li><strong>Core Files</strong> - OS-generated snapshots when process crashes occur</li>
+                <li><strong>Debug Log Files</strong> - Information for debugging issues and errors</li>
+                <li><strong>DDL Log Files</strong> - Records Data Definition Language statements</li>
+            </ul>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Database System Files</h2>
+            <div class="diagram">
+                <img src="database-system-files.png" alt="Database System Files Diagram">
+                <p style="margin-top: 20px; font-style: italic; color: rgba(238, 241, 246, 0.7);">Figure: Oracle Database System Files Structure</p>
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Problems vs Incidents</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h4>📋 Problem</h4>
+                    <p>A <strong>problem</strong> is a critical error in the database identified by a unique problem key (error code + parameters).</p>
+                    <div style="margin-top: 15px;">
+                        <span class="badge badge-critical">ORA-00600</span>
+                        <span class="badge badge-critical">ORA-07445</span>
+                        <span class="badge badge-critical">ORA-04031</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4>🎯 Incident</h4>
+                    <p>An <strong>incident</strong> is a single occurrence of a problem. Each problem can have multiple incidents associated with it.</p>
+                    <p style="margin-top: 10px; color: var(--accent);">Each incident gets a unique ID and detailed dump files.</p>
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <strong>Important:</strong> ADR is designed to handle critical incidents only. Not all database issues will be captured - some may only appear in the alert log.
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>ADR Directory Structure</h2>
+            
+            <p>The ADR organizes files in a hierarchical structure:</p>
+            
+            <pre><code>&lt;ADR_BASE&gt;/diag/&lt;product_type&gt;/&lt;product_id&gt;/&lt;instance_id&gt;
+
+Example:
+/u01/app/oracle/diag/rdbms/oradb/oradb/
+    ├── alert/        (XML format alert log)
+    ├── trace/        (text format alert log & trace files)
+    ├── incident/     (incident dumps)
+    └── cdump/        (core dumps)</code></pre>
+
+            <div class="info-box">
+                <strong>Configuration:</strong> The ADR base is set via the <code>DIAGNOSTIC_DEST</code> parameter, which defaults to <code>$ORACLE_BASE</code>.
+            </div>
+
+            <h3>Alert Log Formats:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Format</th>
+                        <th>Location</th>
+                        <th>Purpose</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>XML</strong></td>
+                        <td><code>.../alert/</code></td>
+                        <td>Machine-readable format for automated processing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Text</strong></td>
+                        <td><code>.../trace/alert_&lt;SID&gt;.log</code></td>
+                        <td>Human-readable format (preferred by DBAs)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Using ADRCI (ADR Command Interpreter)</h2>
+            
+            <p>ADRCI is the command-line tool for managing ADR. It provides powerful capabilities for viewing incidents, packaging diagnostic data, and managing file retention.</p>
+
+            <h3>Starting ADRCI:</h3>
+            <pre><code>$ adrci
+
+ADR base = "/u01/app/oracle"
+adrci&gt;</code></pre>
+
+            <h3>Essential ADRCI Commands:</h3>
+
+            <div class="command-box">
+                <strong>View Available Homes</strong>
+                <pre><code>adrci&gt; show homes
+adrci&gt; show homes -rdbms    # Database homes only</code></pre>
+            </div>
+
+            <div class="command-box">
+                <strong>Set Current Home</strong>
+                <pre><code>adrci&gt; set homepath diag/rdbms/oradb/oradb</code></pre>
+            </div>
+
+            <div class="command-box">
+                <strong>View Alert Log</strong>
+                <pre><code>adrci&gt; show alert
+adrci&gt; show alert -tail 50
+adrci&gt; show alert -p "MESSAGE_TEXT like '%ORA-600%'"</code></pre>
+            </div>
+
+            <div class="command-box">
+                <strong>View Incidents</strong>
+                <pre><code>adrci&gt; show incident
+adrci&gt; show incident -mode brief
+adrci&gt; show incident -p "incident_id=12345"</code></pre>
+            </div>
+
+            <div class="command-box">
+                <strong>View Trace Files</strong>
+                <pre><code>adrci&gt; show tracefile
+adrci&gt; show tracefile -i 12345    # For specific incident
+adrci&gt; show tracefile -t          # With timestamps</code></pre>
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Incident Packaging</h2>
+            
+            <p>When you need to send diagnostic data to Oracle Support, ADRCI can package all relevant files automatically.</p>
+
+            <h3>Three-Step Process:</h3>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>1️⃣ Create Package</h4>
+                    <pre><code>adrci&gt; ips create package
+
+Created package 1 based on problem id 1</code></pre>
+                </div>
+                <div class="card">
+                    <h4>2️⃣ Add Incidents</h4>
+                    <pre><code>adrci&gt; ips add incident 12345 package 1
+
+Added incident 12345 to package 1</code></pre>
+                </div>
+                <div class="card">
+                    <h4>3️⃣ Generate Physical Package</h4>
+                    <pre><code>adrci&gt; ips generate package 1 
+       in /tmp
+
+Generated file /tmp/ORA12345_20250217_1.zip</code></pre>
+                </div>
+            </div>
+
+            <h3>Advanced Packaging Options:</h3>
+
+            <div class="command-box">
+                <strong>Create and Add in One Step</strong>
+                <pre><code># Package by problem ID
+adrci&gt; ips create package problem 1
+
+# Package recent incidents (last 24 hours)
+adrci&gt; ips create package seconds 86400
+
+# Package by time range
+adrci&gt; ips create package time '2025-02-17 08:00:00.00 +00:00' 
+                                '2025-02-17 18:00:00.00 +00:00'</code></pre>
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>ADR Purge Policies</h2>
+            
+            <p>Oracle automatically manages ADR file retention through two policies:</p>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>⏱️ SHORTP_POLICY</h4>
+                    <p><strong>Default: 720 hours (30 days)</strong></p>
+                    <p>Applies to: Trace files, core dumps, packaging information</p>
+                </div>
+                <div class="card">
+                    <h4>📅 LONGP_POLICY</h4>
+                    <p><strong>Default: 8760 hours (1 year)</strong></p>
+                    <p>Applies to: Incident info, incident dumps, alert logs</p>
+                </div>
+            </div>
+
+            <h3>Viewing Current Policies:</h3>
+            <pre><code>adrci&gt; show control
+
+ADRID                SHORTP_POLICY        LONGP_POLICY        
+-------------------- -------------------- --------------------
+3705546879           720                  8760</code></pre>
+
+            <h3>Changing Policies:</h3>
+            <pre><code># Change short-term policy to 48 hours
+adrci&gt; set control (SHORTP_POLICY = 48)
+
+# Change long-term policy to 48 hours
+adrci&gt; set control (LONGP_POLICY = 48)</code></pre>
+
+            <h3>Manual Purging:</h3>
+            
+            <div class="warning-box">
+                <strong>Note:</strong> Manual purge commands use <strong>minutes</strong>, not hours. Example: 2880 minutes = 48 hours
+            </div>
+
+            <pre><code># Purge by age (2880 minutes = 48 hours)
+adrci&gt; purge -age 2880 -type INCIDENT
+adrci&gt; purge -age 2880 -type ALERT
+adrci&gt; purge -age 2880 -type TRACE
+adrci&gt; purge -age 2880 -type CDUMP
+adrci&gt; purge -age 2880 -type HM
+
+# Apply current policy settings immediately
+adrci&gt; purge</code></pre>
+
+            <div class="critical-box">
+                <strong>Important:</strong> ADR purge policy is automatically applied to the database home but NOT to other components (listener, ASM, Grid Infrastructure). You must apply purge policies manually for these components.
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Key Features of ADR</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h4>📊 Centralized Repository</h4>
+                    <p>All diagnostic data (logs, traces, dumps, alerts) stored in a single, organized location.</p>
+                </div>
+                <div class="card">
+                    <h4>🤖 Automatic Organization</h4>
+                    <p>Data automatically organized by timestamp, component, and incident for easy analysis.</p>
+                </div>
+                <div class="card">
+                    <h4>🔧 Multi-Component Support</h4>
+                    <p>Supports diagnostics for database, Oracle Net, ASM, and other Oracle products.</p>
+                </div>
+                <div class="card">
+                    <h4>📦 Incident Packaging</h4>
+                    <p>Built-in tools to package diagnostic data for Oracle Support using ADRCI.</p>
+                </div>
+                <div class="card">
+                    <h4>♻️ Retention Policy</h4>
+                    <p>Automatically purges old diagnostic data based on configurable retention settings.</p>
+                </div>
+                <div class="card">
+                    <h4>🔄 Health Monitoring</h4>
+                    <p>Integrates with Health Monitor to provide proactive health checks and recommendations.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Best Practices</h2>
+            
+            <ul class="feature-list">
+                <li><strong>Regular Monitoring:</strong> Check ADR regularly for new incidents and problems</li>
+                <li><strong>Adjust Retention:</strong> Modify purge policies based on storage constraints and compliance requirements</li>
+                <li><strong>Archive Important Incidents:</strong> Package and archive critical incidents before they're purged</li>
+                <li><strong>Monitor Disk Space:</strong> Ensure adequate space for ADR, especially on busy systems</li>
+                <li><strong>Automate Purging:</strong> Schedule regular purge operations for non-database components</li>
+                <li><strong>Review Alert Logs:</strong> Not all issues create incidents - review alert logs for warnings</li>
+                <li><strong>Use Web Search Tools:</strong> Leverage ADRCI's search capabilities to find specific errors quickly</li>
+                <li><strong>Document Incidents:</strong> Maintain a log of resolved incidents for future reference</li>
+            </ul>
+        </section>
+
+        <section class="section scroll-animation">
+            <h2>Reference Documentation</h2>
+            
+            <div class="info-box">
+                <strong>Oracle Database 23ai Documentation:</strong>
+                <p style="margin-top: 10px;">The primary resource for ADR and ADRCI is the <strong>Oracle Database Utilities Guide</strong>, Chapter 23 - "ADR Command Interpreter (ADRCI)"</p>
+            </div>
+
+            <h3>Useful adrci Help Commands:</h3>
+            <pre><code># List all commands
+adrci&gt; help
+
+# Get help for specific command
+adrci&gt; help show alert
+adrci&gt; help purge
+adrci&gt; help ips
+
+# Exit adrci
+adrci&gt; exit</code></pre>
+        </section>
+
+        <footer>
+            <p>Oracle ADR Complete Guide | Oracle Database 11g and Above</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">Keep your database diagnostics organized and accessible</p>
+        </footer>
+    </div>
+</body>
+</html>
